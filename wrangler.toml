@@ -1,0 +1,8 @@
+name = "your-project-name"
+compatibility_date = "2026-01-10"
+
+[assets]
+# Use "." if your files (index.html, etc.) are in the root
+# Use "public" or "dist" if they are in a subfolder
+directory = "."
+not_found_handling = "404-page"
