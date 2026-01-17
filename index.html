@@ -1,46 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Aaron’s Puzzles</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css" />
-</head>
-<body>
-  <main>
-    <h1>Aaron’s Puzzles</h1>
-    <p class="tagline">
-      A thing I do for fun! It's currently <b>super broken</b> - but will be back in mid-2026!
-    </p>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Aaron’s Puzzles</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
 
-    <section class="puzzles">
-      <a href="/TheVault/" class="puzzle">
-        <h2>The Vault</h2>
-        <p>2022</p>
-      </a>
-
-      <a href="/CookieJar/" class="puzzle">
-        <h2>Cookie Jar</h2>
-        <p>2023</p>
-      </a>
-
-      <a href="/BriefMystery/" class="puzzle">
-        <h2>Brief Mystery</h2>
-        <p>2024</p>
-      </a>
-
-      <a href="/PandorasBox/" class="puzzle">
-        <h2>Pandora's Box</h2>
-        <p>2025</p>
-      </a>
-    </section>
-
-    <footer>
-      <p>
-        © Aaron Gillespie —
-        <a href="https://github.com/">GitHub</a>
+  <body>
+    <main>
+      <h1 class="banner">Aaron’s Puzzles</h1>
+      <p class="tagline">
+        A thing I do for fun! It's currently <b>super broken</b> - but will be
+        back in mid-2026!
       </p>
-    </footer>
-  </main>
-</body>
+
+      <section class="puzzle-grid">
+        <div class="puzzle-grid-odd-row">
+          <a href="/TheVault/">
+            <img
+              class="logo active"
+              src="./assets/logo-the-vault.svg"
+              alt="The Vault Logo"
+              tooltip="Is this a thing?"
+            />
+          </a>
+          <a href="/CookieJar/">
+            <img
+              class="logo active"
+              src="./assets/logo-cookie-jar.svg"
+              alt="The Vault Logo"
+            />
+          </a>
+          <a href="/BriefMystery/">
+            <img
+              class="logo active"
+              src="./assets/logo-brief-mystery.svg"
+              alt="The Vault Logo"
+            />
+          </a>
+        </div>
+        <div class="puzzle-grid-even-row">
+          <a href="/PandorasBox/">
+            <img
+              class="logo active"
+              src="./assets/logo-pandoras-box.svg"
+              alt="The Vault Logo"
+            />
+          </a>
+          <a href="/MedicalKit/">
+            <img
+              class="logo active"
+              src="./assets/logo-medical-kit.svg"
+              alt="The Vault Logo"
+            />
+          </a>
+        </div>
+        <div class="puzzle-grid-odd-row">
+          <img
+            class="logo inactive"
+            src="./assets/logo-placeholder-1.svg"
+            alt="The Vault Logo"
+          />
+          <img
+            class="logo inactive"
+            src="./assets/logo-placeholder-2.svg"
+            alt="The Vault Logo"
+          />
+          <img
+            class="logo inactive"
+            src="./assets/logo-placeholder-3.svg"
+            alt="The Vault Logo"
+          />
+        </div>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <a href="mailto:aarongilly@gmail.com">Email Me</a>
+        <button id="fetchButton">Fetch Data</button>
+      </section>
+
+      <script type="module">
+        import { fetchData, postData } from './Lib/api.js'
+        const button = document.getElementById('fetchButton')
+        button.addEventListener('click', () => {
+          postData("comments",["one","two","three"]).then(data => console.log(data))
+        })
+      </script>
+
+      <footer>
+        <p>
+          © Aaron Gillespie —
+          <a href="https://github.com/">GitHub</a>
+        </p>
+      </footer>
+    </main>
+  </body>
 </html>

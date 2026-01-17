@@ -1,3 +1,15 @@
+/* You can still style like this even with Tailwind */
+@media (prefers-color-scheme: dark) {
+  :global(body) {
+    background-color: rgb(22 13 30);
+  }
+}
+
+.fancy {
+  /* font-family: Audiowide; */
+  animation: color-change 10s infinite;
+}
+
 :root {
   --bg: #0e0e11;
   --fg: #eaeaf0;
@@ -8,30 +20,6 @@
 
 * {
   box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-  background: var(--bg);
-  color: var(--fg);
-  line-height: 1.6;
-}
-
-main {
-  max-width: 1000px;
-  padding: 3rem 1.5rem;
-  margin: 0 auto;
-}
-
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.tagline {
-  color: var(--muted);
-  margin-bottom: 2.5rem;
 }
 
 .puzzles {
@@ -52,7 +40,7 @@ h1 {
 
 .puzzle:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .puzzle h2 {
@@ -75,4 +63,93 @@ footer {
 footer a {
   color: var(--accent);
   text-decoration: none;
+}
+
+.puzzle-grid {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 3rem 0rem;
+}
+
+.logo {
+  transition: 0.5s;
+  width: 110px;
+  margin-bottom: -25px;
+  margin-top: -25px;
+}
+
+@media (min-width: 960px) {
+  .logo {
+    width: 300px;
+    margin-bottom: -50px;
+    margin-top: -50px;
+  }
+}
+
+.active:hover {
+  filter: drop-shadow(1em 1em 1em #34398baa);
+  transform: scale(1.1);
+}
+
+.inactive:hover {
+  filter: grayscale(75%);
+  transform: scale(0.95);
+}
+
+.banner {
+  background: -webkit-linear-gradient(
+    -45deg,
+    #ee7752,
+    #e73c7e,
+    #23a6d5,
+    #23d5ab
+  );
+  background-size: 350% 350%;
+  color: white;
+  font-family: monospace;
+}
+
+h1 {
+  @apply text-5xl mb-4 mt-6 text-center mx-auto font-[Audiowide];
+}
+h2 {
+  @apply text-3xl mb-3 mt-3 text-center mx-auto font-[Audiowide];
+}
+
+input {
+  @apply dark:bg-zinc-700;
+}
+
+p,
+div,
+span {
+  @apply dark:text-white;
+}
+
+a {
+  @apply text-blue-500;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+@keyframes color-change {
+  0% {
+    color: #ee7752;
+  }
+  25% {
+    color: #e73c7e;
+  }
+  50% {
+    color: #23a6d5;
+  }
+  75% {
+    color: #23d5ab;
+  }
+  100% {
+    color: #ee7752;
+  }
 }
