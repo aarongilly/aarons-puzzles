@@ -1,21 +1,25 @@
-/* You can still style like this even with Tailwind */
+:root {
+  --bg: rgb(222 213 230);
+  --muted: #a0a0b0;
+  --accent: #460656;
+}
+
 @media (prefers-color-scheme: dark) {
-  :global(body) {
-    background-color: rgb(22 13 30);
+  :root {
+    --bg: rgb(22 13 30);
+    --muted: #4f4a4f;
+    --accent: #cc99d9;
   }
+}
+
+body {
+  background-color: var(--bg);
+  margin: 0px;
 }
 
 .fancy {
   /* font-family: Audiowide; */
   animation: color-change 10s infinite;
-}
-
-:root {
-  --bg: #0e0e11;
-  --fg: #eaeaf0;
-  --muted: #a0a0b0;
-  --card: #1a1a22;
-  --accent: #6aa6ff;
 }
 
 * {
@@ -31,7 +35,6 @@
 .puzzle {
   display: block;
   padding: 1.5rem;
-  background: var(--card);
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
@@ -43,21 +46,27 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-.puzzle h2 {
-  margin-top: 0;
-  margin-bottom: 0.25rem;
+.tagline {
+  text-align: center;
+  font-family: monospace;
   color: var(--accent);
+  padding: 1rem;
+  font-size: 1.25rem;
 }
 
-.puzzle p {
-  margin: 0;
+.muted{
   color: var(--muted);
+}
+
+.bg{
+  color: var(--bg);
 }
 
 footer {
   margin-top: 4rem;
   color: var(--muted);
   font-size: 0.9rem;
+  text-align: center;
 }
 
 footer a {
@@ -107,49 +116,72 @@ footer a {
     #23d5ab
   );
   background-size: 350% 350%;
+  animation: color-change 10s infinite;
+  position: relative;
   color: white;
   font-family: monospace;
+  font-size: 3rem;
+  margin-top: 0px;
+  padding: 0.5rem;
+  text-align: center;
 }
 
-h1 {
-  @apply text-5xl mb-4 mt-6 text-center mx-auto font-[Audiowide];
-}
-h2 {
-  @apply text-3xl mb-3 mt-3 text-center mx-auto font-[Audiowide];
-}
-
-input {
-  @apply dark:bg-zinc-700;
-}
-
-p,
-div,
-span {
-  @apply dark:text-white;
+@media (prefers-color-scheme: dark) {
+  .banner {
+    background: -webkit-linear-gradient(
+      -45deg,
+      hsl(14, 49%, 25%),
+      hsl(337, 58%, 37%),
+      hsl(196, 52%, 19%),
+      hsl(161, 52%, 19%)
+    );
+    background-size: 350% 350%;
+    animation: color-change 10s infinite;
+  }
 }
 
-a {
-  @apply text-blue-500;
+/* Subtle color changing glow effect */
+.banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  filter: blur(140px);
+  opacity: 1;
+  z-index: -1;
+  animation: color-change 10s infinite;
 }
 
 a:hover {
   text-decoration: underline;
 }
 
+.flex-center {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
 @keyframes color-change {
   0% {
-    color: #ee7752;
-  }
-  25% {
-    color: #e73c7e;
+    background-position: 0% 50%;
   }
   50% {
-    color: #23a6d5;
+    background-position: 100% 50%;
   }
-  75% {
-    color: #23d5ab;
-  }
-  100% {
-    color: #ee7752;
-  }
+}
+
+.my-button {
+  background-color: var(--accent);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-family: monospace;
+  transition: background-color 0.3s ease;
+  font-size: 1.5rem;
+}
+
+.my-button:hover {
+  background-color: #7a2a8e;
 }

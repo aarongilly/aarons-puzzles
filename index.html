@@ -10,10 +10,6 @@
   <body>
     <main>
       <h1 class="banner">Aaron’s Puzzles</h1>
-      <p class="tagline">
-        A thing I do for fun! It's currently <b>super broken</b> - but will be
-        back in mid-2026!
-      </p>
 
       <section class="puzzle-grid">
         <div class="puzzle-grid-odd-row">
@@ -76,16 +72,27 @@
       </section>
 
       <section>
-        <h2>Contact</h2>
-        <a href="mailto:aarongilly@gmail.com">Email Me</a>
-        <button id="fetchButton">Fetch Data</button>
+        <p class="tagline">
+          A thing I do for fun! It's currently <b>super broken</b> - but will be
+          back in mid-2026!
+        </p>
+      </section>
+
+      <section>
+        <div class="flex-center">
+          <a href="/About/" class="my-button">About</a>
+          <p class="muted">---<span class="bg">GOOD JOB</span>---</p>
+          <a href="/Blog/" class="my-button">Blog</a>
+        </div>
       </section>
 
       <script type="module">
         import { fetchData, postData } from './Lib/api.js'
         const button = document.getElementById('fetchButton')
         button.addEventListener('click', () => {
-          postData("comments",["one","two","three"]).then(data => console.log(data))
+          postData('comments', ['one', 'two', 'three']).then(data =>
+            console.log(data)
+          )
         })
       </script>
 
