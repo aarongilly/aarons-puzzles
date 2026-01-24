@@ -5279,7 +5279,7 @@ var Hl = T(
   ),
   Fl = T('<button class="nested-button svelte-kk8cjo">Ready to Play!</button>'),
   Xl = T(
-    '<h2>This puzzle can be done entirely online!</h2> <p class="svelte-kk8cjo">You can play this puzzle without the physical box...</p> <!>',
+    '<h2>This puzzle can be done entirely online!</h2> <p class="svelte-kk8cjo">You can play this puzzle without the physical box...</p> <p class="svelte-kk8cjo">All you need is a computer or tablet (not a phone)!</p> <!>',
     1
   ),
   ql = T(
