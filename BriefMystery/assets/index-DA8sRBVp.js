@@ -2660,7 +2660,7 @@ let H = Ar(to),
   K = Ar('splash'),
   Gn = Ar([200, 200, 1, 1])
 function Nt (e = 0.5) {
-  let t = new Audio('success.mp3')
+  let t = new Audio('./assets/success.mp3')
   ;(t.volume = e), t.play()
 }
 function Bn (e = 0.5) {
@@ -5736,7 +5736,7 @@ var lc = T(
   ),
   cc = T('<div class="grid col-start-2  items-center"><!></div>'),
   uc = T(
-    '<audio src="success-fanfare.mp3"></audio> <div></div> <div class="grid grid-cols-1 overflow-auto"><h1 class="mx-auto">MYSTERY SOLVED <i>(below)</i> !</h1> <div class="grid grid-cols-3 justify-center"><h2 class="col-span-3">- High Scores -</h2> <!></div> <div class="grid items-center"><h2>- Outro -</h2> <iframe class="youtube-video svelte-5wojgc" src="https://www.youtube.com/embed/bEWa0CASHm4" title="Brief Mystery Outro" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen=""></iframe></div> <div class="w-11/12 mx-auto grid items-center"><h2>- Game Flow -</h2> <img src="./assets/game-flow.png" alt="flowchart of the puzzle" class="game-flow svelte-5wojgc"/></div> <div class="grid items-center"><h2>- For Fun -</h2> <button class="border w-1/3 mx-auto border-blue-800 bg-blue-500 text-gray-100 p-3 rounded-md mt-3 text-xl">Explore More</button></div></div>',
+    '<audio src="./assets/success-fanfare.mp3"></audio> <div></div> <div class="grid grid-cols-1 overflow-auto"><h1 class="mx-auto">MYSTERY SOLVED <i>(below)</i> !</h1> <div class="grid grid-cols-3 justify-center"><h2 class="col-span-3">- High Scores -</h2> <!></div> <div class="grid items-center"><h2>- Outro -</h2> <iframe class="youtube-video svelte-5wojgc" src="https://www.youtube.com/embed/bEWa0CASHm4" title="Brief Mystery Outro" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen=""></iframe></div> <div class="w-11/12 mx-auto grid items-center"><h2>- Game Flow -</h2> <img src="./assets/game-flow.png" alt="flowchart of the puzzle" class="game-flow svelte-5wojgc"/></div> <div class="grid items-center"><h2>- For Fun -</h2> <button class="border w-1/3 mx-auto border-blue-800 bg-blue-500 text-gray-100 p-3 rounded-md mt-3 text-xl">Explore More</button></div></div>',
     1
   )
 function fc (e, t) {
