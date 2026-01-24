@@ -81,6 +81,7 @@ footer a {
   flex-wrap: wrap;
   padding: 3rem 0rem;
   max-width: 1500px;
+  margin: auto;
 }
 
 .logo {
@@ -88,15 +89,6 @@ footer a {
   width: 110px;
   margin-bottom: -25px;
   margin-top: -25px;
-}
-
-@media (min-width: 960px) {
-  .logo {
-    width: 300px;
-    margin-bottom: -50px;
-    margin-top: -50px;
-  }
-  /* DO MORE FIXING HERE */
 }
 
 .active:hover {
@@ -128,19 +120,7 @@ footer a {
   text-align: center;
 }
 
-@media (prefers-color-scheme: dark) {
-  .banner {
-    background: -webkit-linear-gradient(
-      -45deg,
-      hsl(14, 49%, 25%),
-      hsl(337, 58%, 37%),
-      hsl(196, 52%, 19%),
-      hsl(161, 52%, 19%)
-    );
-    background-size: 350% 350%;
-    animation: color-change 10s infinite;
-  }
-}
+
 
 /* Subtle color changing glow effect */
 .banner::after {
@@ -186,4 +166,32 @@ a:hover {
 
 .my-button:hover {
   background-color: #7a2a8e;
+}
+
+
+/* MEDIA QUERIES */
+
+@media (prefers-color-scheme: dark) {
+  .banner {
+    background: -webkit-linear-gradient(
+      -45deg,
+      hsl(14, 49%, 25%),
+      hsl(337, 58%, 37%),
+      hsl(196, 52%, 19%),
+      hsl(161, 52%, 19%)
+    );
+    background-size: 350% 350%;
+    animation: color-change 10s infinite;
+  }
+}
+
+@media (min-width: 960px) {
+  .logo {
+    width: 300px;
+    margin-bottom: -50px;
+    margin-top: -50px;
+  }
+  .banner {
+    font-size: 2rem;
+ }
 }
