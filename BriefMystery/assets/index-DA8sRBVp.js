@@ -2664,15 +2664,15 @@ function Nt (e = 0.5) {
   ;(t.volume = e), t.play()
 }
 function Bn (e = 0.5) {
-  let t = new Audio('./unsuccessful.m4a')
+  let t = new Audio('./assets/unsuccessful.m4a')
   ;(t.volume = e), t.play()
 }
 function ro (e = 0.5) {
-  let t = new Audio('./fart.mp3')
+  let t = new Audio('./assets/fart.mp3')
   ;(t.volume = e), t.play()
 }
 function Kn (e = 0.5) {
-  let t = new Audio('./successful.m4a')
+  let t = new Audio('./assets/successful.m4a')
   ;(t.volume = e), t.play()
 }
 var no = T('<h3 class="svelte-1y24yx5">Info</h3> <p> </p>', 1),
@@ -2732,17 +2732,17 @@ function yo (e, t) {
     return Math.round(1001 - (1098 - (a(x)[1] + w[1] * 548 - 548)) / 1.098)
   }
   let P = new Image()
-  P.src = './my-sprite.png'
+  P.src = './assets/my-sprite.png'
   let Z = new Image()
-  Z.src = './map-sheet.png'
+  Z.src = './assets/map-sheet.png'
   let Q = new Image()
-  Q.src = './objects.png'
+  Q.src = './assets/objects.png'
   let oe = new Image()
-  oe.src = './people.png'
+  oe.src = './assets/people.png'
   const ye = new Image()
-  ye.src = './map.png'
+  ye.src = './assets/map.png'
   const Me = new Image()
-  Me.src = './mapAbove.png'
+  Me.src = './assets/mapAbove.png'
   const D = {
     name: 'Player',
     dX: a(x)[0],
@@ -3797,7 +3797,7 @@ function Ao (e, t) {
   M('click', S, _), k(e, v), he(), s()
 }
 var Oo = T(
-  '<div class="container grid grid-cols-2 svelte-126i2jt"><button><img src="./case-open-temp.png" width="200px" alt="logo" class="mx-auto my-3"/></button> <button><img src="./cryptex.png" width="200px" alt="logo" class="mx-auto my-3"/></button></div>'
+  '<div class="container grid grid-cols-2 svelte-126i2jt"><button><img src="./assets/case-open-temp.png" width="200px" alt="logo" class="mx-auto my-3"/></button> <button><img src="./assets/cryptex.png" width="200px" alt="logo" class="mx-auto my-3"/></button></div>'
 )
 function Io (e) {
   const [t, r] = ge()
@@ -3810,7 +3810,7 @@ function Io (e) {
     r()
 }
 var Mo = T(
-  '<div class="bg-white mx-auto border-2 border-black rounded-xl p-3"><h2 class="dark:text-black">Daily Puzzles App!</h2> <div class="grid grid-cols-2 gap-10 content-around"><button><img src="./connections.png" width="100px" alt="logo" class="mx-auto my-3"/> <p class="svelte-1v0qglv">Connections</p></button> <button><img src="./wordle.png" width="100px" alt="logo" class="mx-auto my-3"/> <p class="svelte-1v0qglv">Wordle</p></button> <button><img src="./sudoku.png" width="100px" alt="logo" class="mx-auto my-3"/> <p class="svelte-1v0qglv">Sudoku</p></button> <button><img src="./mini.png" width="100px" alt="logo" class="mx-auto my-3"/> <p class="svelte-1v0qglv">The Mini</p></button></div></div>'
+  '<div class="bg-white mx-auto border-2 border-black rounded-xl p-3"><h2 class="dark:text-black">Daily Puzzles App!</h2> <div class="grid grid-cols-2 gap-10 content-around"><button><img src="./assets/connections.png" width="100px" alt="logo" class="mx-auto my-3"/> <p class="svelte-1v0qglv">Connections</p></button> <button><img src="./assets/wordle.png" width="100px" alt="logo" class="mx-auto my-3"/> <p class="svelte-1v0qglv">Wordle</p></button> <button><img src="./assets/sudoku.png" width="100px" alt="logo" class="mx-auto my-3"/> <p class="svelte-1v0qglv">Sudoku</p></button> <button><img src="./assets/mini.png" width="100px" alt="logo" class="mx-auto my-3"/> <p class="svelte-1v0qglv">The Mini</p></button></div></div>'
 )
 function Co (e) {
   const [t, r] = ge()
@@ -4374,7 +4374,7 @@ var el = T(
     '<div class="grid grid-cols-1 hover:bg-cyan-50 svelte-1ejbkfo"><button class="py-1 hover:scale-125 duration-100 svelte-1ejbkfo">👆</button> <div class="text-center text-3xl bg-white text-black svelte-1ejbkfo"> </div> <button class="py-1  hover:scale-125 duration-100 svelte-1ejbkfo">👇</button></div>'
   ),
   tl = T(
-    '<img src="./cryptex.png" alt="logo" class="mx-auto my-3 svelte-1ejbkfo"/> <div class="svelte-1ejbkfo"><div class="grid grid-cols-8 gap-2 svelte-1ejbkfo"><div class="svelte-1ejbkfo"></div> <!> <div class="grid justify-evenly svelte-1ejbkfo"><button style="width:40px; height: 40px;">→</button></div> <div class="svelte-1ejbkfo"></div></div></div>',
+    '<img src="./assets/cryptex.png" alt="logo" class="mx-auto my-3 svelte-1ejbkfo"/> <div class="svelte-1ejbkfo"><div class="grid grid-cols-8 gap-2 svelte-1ejbkfo"><div class="svelte-1ejbkfo"></div> <!> <div class="grid justify-evenly svelte-1ejbkfo"><button style="width:40px; height: 40px;">→</button></div> <div class="svelte-1ejbkfo"></div></div></div>',
     1
   )
 function rl (e, t) {
@@ -4484,7 +4484,7 @@ var nl = T(
   ),
   il = T('<div></div>'),
   al = T(
-    '<img src="./case-open-temp.png" width="200px" alt="logo" class="mx-auto my-3"/> <div class="grid grid-cols-10 my-3"></div> <div class="grid grid-cols-5 justify-center content-around"></div>',
+    '<img src="./assets/case-open-temp.png" width="200px" alt="logo" class="mx-auto my-3"/> <div class="grid grid-cols-10 my-3"></div> <div class="grid grid-cols-5 justify-center content-around"></div>',
     1
   )
 function ol (e) {
@@ -4572,7 +4572,7 @@ function ol (e) {
         d = N(m)
       U(() => {
         re(f, r[a(g).number]),
-          cr(p, 'src', `./${a(g).isOn ? 'on' : 'off'}.png`),
+          cr(p, 'src', `./assets/${a(g).isOn ? 'on' : 'off'}.png`),
           re(d, n[a(g).number])
       }),
         k(v, x)
@@ -4600,7 +4600,7 @@ function ol (e) {
               Q = y(P, 2)
             U(() => {
               re(j, o[x].l),
-                cr(z, 'src', `./${a(g).state ?? ''}.png`),
+                cr(z, 'src', `./assets/${a(g).state ?? ''}.png`),
                 re(Z, o[x].r)
             }),
               M('click', A, () => {
@@ -4628,7 +4628,7 @@ function ol (e) {
     k(e, u)
 }
 var ll = T(
-  '<div style="width:400px; height: 500px; border: solid black 1px; background-color: white; margin: auto;"><img src="./sudoku-case.png" width="300px" alt="logo" class="mx-auto my-3"/></div>'
+  '<div style="width:400px; height: 500px; border: solid black 1px; background-color: white; margin: auto;"><img src="./assets/sudoku-case.png" width="300px" alt="logo" class="mx-auto my-3"/></div>'
 )
 function cl (e) {
   var t = ll()
@@ -4640,7 +4640,7 @@ var ul = T('<div> </div>'),
   vl = T('<button class="svelte-kv3or8">Take GPS unit</button>'),
   hl = T('<div class="text-2xl">GPS added to inventory!</div>'),
   gl = T(
-    '<div class="grid grid-cols-5"><div><h2>You</h2> <img src="./me-bigger.png" width="100px" alt="logo" class="mx-auto my-3"/></div> <div class="col-span-3 conversation-holder svelte-kv3or8"></div> <div><h2>Don & Vickie</h2> <img src="./parents-bigger.png" width="200px" alt="logo" class="mx-auto my-3"/></div></div> <!> <!>',
+    '<div class="grid grid-cols-5"><div><h2>You</h2> <img src="./assets/me-bigger.png" width="100px" alt="logo" class="mx-auto my-3"/></div> <div class="col-span-3 conversation-holder svelte-kv3or8"></div> <div><h2>Don & Vickie</h2> <img src="./assets/parents-bigger.png" width="200px" alt="logo" class="mx-auto my-3"/></div></div> <!> <!>',
     1
   )
 function pl (e, t) {
@@ -4752,11 +4752,11 @@ function pl (e, t) {
   k(e, u), he(), s()
 }
 var _l = T(
-    '<button class="svelte-o0mui9"><img src="./shed-note.png" width="60px; " alt="logo" class="absolute" style="top: 175px; left: 520px; rotate: 10deg;"/></button>'
+    '<button class="svelte-o0mui9"><img src="./assets/shed-note.png" width="60px; " alt="logo" class="absolute" style="top: 175px; left: 520px; rotate: 10deg;"/></button>'
   ),
   ml = T('<div class="text-2xl mt-2">📄 Added to Inventory!</div>'),
   bl = T(
-    '<div class="img-div h-full grid grid-cols-9 grid-rows-5" style="width: 600px; height: 640px;"><div style="width: 508px; height: 640px; position: relative;"><img src="./shed-interior.jpeg" height="600px;" alt="logo" class="absolute myclass"/> <!></div></div> <!>',
+    '<div class="img-div h-full grid grid-cols-9 grid-rows-5" style="width: 600px; height: 640px;"><div style="width: 508px; height: 640px; position: relative;"><img src="./assets/shed-interior.jpeg" height="600px;" alt="logo" class="absolute myclass"/> <!></div></div> <!>',
     1
   )
 function yl (e, t) {
@@ -4799,7 +4799,7 @@ var wl = T('<div> </div>'),
     '<div class="svelte-1ao6qd5"><input id="in" placeholder="Say next..." class="svelte-1ao6qd5"/></div>'
   ),
   El = T(
-    '<div class="grid grid-cols-5 svelte-1ao6qd5"><div class="svelte-1ao6qd5"><h2 class="svelte-1ao6qd5">You</h2> <img src="./me-bigger.png" width="100px" alt="logo"/></div> <div class="col-span-3 conversation-holder svelte-1ao6qd5"></div> <div class="svelte-1ao6qd5"><h2 class="svelte-1ao6qd5">Krista</h2> <img src="./krista-bigger.png" width="100px" alt="logo"/></div></div> <!>',
+    '<div class="grid grid-cols-5 svelte-1ao6qd5"><div class="svelte-1ao6qd5"><h2 class="svelte-1ao6qd5">You</h2> <img src="./assets/me-bigger.png" width="100px" alt="logo"/></div> <div class="col-span-3 conversation-holder svelte-1ao6qd5"></div> <div class="svelte-1ao6qd5"><h2 class="svelte-1ao6qd5">Krista</h2> <img src="./assets/krista-bigger.png" width="100px" alt="logo"/></div></div> <!>',
     1
   )
 function $l (e, t) {
@@ -4937,7 +4937,7 @@ var Tl = T('<div> </div>'),
   Nl = T('<button class="svelte-70hij5">Continue conversation</button>'),
   Dl = T('<button class="svelte-70hij5">Walk around</button>'),
   Al = T(
-    '<div class="grid grid-cols-5 svelte-70hij5"><div class="svelte-70hij5"><h2 class="svelte-70hij5">You</h2> <img src="./me-bigger.png" width="100px" alt="logo"/></div> <div class="col-span-3 conversation-holder svelte-70hij5"></div> <div class="svelte-70hij5"><h2 class="svelte-70hij5">Melissa</h2> <img src="./melissa-bigger.png" width="100px" alt="logo"/></div></div> <!>',
+    '<div class="grid grid-cols-5 svelte-70hij5"><div class="svelte-70hij5"><h2 class="svelte-70hij5">You</h2> <img src="./assets/me-bigger.png" width="100px" alt="logo"/></div> <div class="col-span-3 conversation-holder svelte-70hij5"></div> <div class="svelte-70hij5"><h2 class="svelte-70hij5">Melissa</h2> <img src="./assets/melissa-bigger.png" width="100px" alt="logo"/></div></div> <!>',
     1
   )
 function Ol (e, t) {
@@ -5025,7 +5025,7 @@ function Ol (e, t) {
     s()
 }
 var Il = T(
-  '<div style="width:600px; height: 600px; border: solid black 1px; background-color: white; margin: auto;"><img src="./shed-note.png" alt="logo" class="mx-auto my-3 w-full"/></div>'
+  '<div style="width:600px; height: 600px; border: solid black 1px; background-color: white; margin: auto;"><img src="./assets/shed-note.png" alt="logo" class="mx-auto my-3 w-full"/></div>'
 )
 function Ml (e) {
   var t = Il()
@@ -5736,7 +5736,7 @@ var lc = T(
   ),
   cc = T('<div class="grid col-start-2  items-center"><!></div>'),
   uc = T(
-    '<audio src="success-fanfare.mp3"></audio> <div></div> <div class="grid grid-cols-1 overflow-auto"><h1 class="mx-auto">MYSTERY SOLVED <i>(below)</i> !</h1> <div class="grid grid-cols-3 justify-center"><h2 class="col-span-3">- High Scores -</h2> <!></div> <div class="grid items-center"><h2>- Outro -</h2> <iframe class="youtube-video svelte-5wojgc" src="https://www.youtube.com/embed/bEWa0CASHm4" title="Brief Mystery Outro" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen=""></iframe></div> <div class="w-11/12 mx-auto grid items-center"><h2>- Game Flow -</h2> <img src="./game-flow.png" alt="flowchart of the puzzle" class="game-flow svelte-5wojgc"/></div> <div class="grid items-center"><h2>- For Fun -</h2> <button class="border w-1/3 mx-auto border-blue-800 bg-blue-500 text-gray-100 p-3 rounded-md mt-3 text-xl">Explore More</button></div></div>',
+    '<audio src="success-fanfare.mp3"></audio> <div></div> <div class="grid grid-cols-1 overflow-auto"><h1 class="mx-auto">MYSTERY SOLVED <i>(below)</i> !</h1> <div class="grid grid-cols-3 justify-center"><h2 class="col-span-3">- High Scores -</h2> <!></div> <div class="grid items-center"><h2>- Outro -</h2> <iframe class="youtube-video svelte-5wojgc" src="https://www.youtube.com/embed/bEWa0CASHm4" title="Brief Mystery Outro" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen=""></iframe></div> <div class="w-11/12 mx-auto grid items-center"><h2>- Game Flow -</h2> <img src="./assets/game-flow.png" alt="flowchart of the puzzle" class="game-flow svelte-5wojgc"/></div> <div class="grid items-center"><h2>- For Fun -</h2> <button class="border w-1/3 mx-auto border-blue-800 bg-blue-500 text-gray-100 p-3 rounded-md mt-3 text-xl">Explore More</button></div></div>',
     1
   )
 function fc (e, t) {
