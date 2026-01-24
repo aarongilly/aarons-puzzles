@@ -80,6 +80,7 @@ footer a {
   gap: 1rem;
   flex-wrap: wrap;
   padding: 3rem 0rem;
+  max-width: 1500px;
 }
 
 .logo {
@@ -95,6 +96,7 @@ footer a {
     margin-bottom: -50px;
     margin-top: -50px;
   }
+  /* DO MORE FIXING HERE */
 }
 
 .active:hover {
