@@ -17,6 +17,10 @@ body {
   margin: 0px;
 }
 
+.bold {
+  font-weight: bold;
+}
+
 .fancy {
   /* font-family: Audiowide; */
   animation: color-change 10s infinite;
@@ -50,15 +54,15 @@ body {
   text-align: center;
   font-family: monospace;
   color: var(--accent);
-  padding: 1rem;
-  font-size: 1.25rem;
+  padding: 0rem 1rem 1rem 1rem;
+  font-size: 0.5rem;
 }
 
-.muted{
+.muted {
   color: var(--muted);
 }
 
-.bg{
+.bg {
   color: var(--bg);
 }
 
@@ -114,13 +118,11 @@ footer a {
   position: relative;
   color: white;
   font-family: monospace;
-  font-size: 3rem;
+  font-size: 1.75rem;
   margin-top: 0px;
   padding: 0.5rem;
   text-align: center;
 }
-
-
 
 /* Subtle color changing glow effect */
 .banner::after {
@@ -156,18 +158,19 @@ a:hover {
 .my-button {
   background-color: var(--accent);
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.5rem;
   border-radius: 4px;
   text-decoration: none;
   font-family: monospace;
   transition: background-color 0.3s ease;
-  font-size: 1.5rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
 }
 
 .my-button:hover {
   background-color: #7a2a8e;
 }
-
 
 /* MEDIA QUERIES */
 
@@ -185,13 +188,53 @@ a:hover {
   }
 }
 
-@media (min-width: 960px) {
+/* Largish screens */
+@media (min-width: 575px) {
+  .logo {
+    width: 150px;
+    margin-bottom: -29px;
+    margin-top: -29px;
+  }
+  .banner {
+    font-size: 2.25rem;
+  }
+  .my-button {
+    font-size: 1.5rem;
+  }
+  .tagline {
+    font-size: 0.75rem;
+  }
+}
+
+/* Larger screens */
+@media (min-width: 625px) {
+  .logo {
+    width: 200px;
+    margin-bottom: -36px;
+    margin-top: -36px;
+  }
+  .banner {
+    font-size: 3.5rem;
+  }
+  .my-button {
+    font-size: 1.75rem;
+  }
+  .tagline {
+    font-size: 1rem;
+  }
+}
+
+/* Largest screens */
+@media (min-width: 925px) {
   .logo {
     width: 300px;
     margin-bottom: -50px;
     margin-top: -50px;
   }
   .banner {
-    font-size: 2rem;
- }
+    font-size: 4rem;
+  }
+  .tagline {
+    font-size: 1.15rem;
+  }
 }
