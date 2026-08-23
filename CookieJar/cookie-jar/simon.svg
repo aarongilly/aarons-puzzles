@@ -1,0 +1,27 @@
+<svg height="30" width="30" xmlns="http://www.w3.org/2000/svg">
+     <rect x="1" y="1" height="13" width="13" stroke="black" fill="darkgreen"/>
+     <rect x="1" y="1" height="13" width="13" stroke="black" fill="lime">
+          <animate attributeName="opacity"
+             values="0;0;0;1;0" dur="4s"
+             repeatCount="indefinite"/>
+     </rect>
+
+      <rect x="16" y="1" height="13" width="13" stroke="black" fill="darkred"/>
+      <rect x="16" y="1" height="13" width="13" stroke="black" fill="red">
+          <animate attributeName="opacity"
+             values="0;0;1;0;0" dur="4s"
+             repeatCount="indefinite"/>
+     </rect>
+      <rect x="1" y="16" height="13" width="13" stroke="black" fill="goldenrod"/>
+      <rect x="1" y="16" height="13" width="13" stroke="black" fill="yellow">
+          <animate attributeName="opacity"
+             values="0;1;0;0;0" dur="4s"
+             repeatCount="indefinite"/>
+     </rect>
+      <rect x="16" y="16" height="13" width="13" stroke="black" fill="blue"/>
+      <rect x="16" y="16" height="13" width="13" stroke="black" fill="aqua">
+          <animate attributeName="opacity"
+             values="0;0;0;0;1" dur="4s"
+             repeatCount="indefinite"/>
+     </rect>
+</svg>
