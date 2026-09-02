@@ -8,5 +8,34 @@
     <script type="module" crossorigin src="./assets/index-eada86c3.js"></script>
     <link rel="stylesheet" href="./assets/index-2c587f34.css">
   </head>
-  <body><div id="app"></div></body>
+  <body><div id="app"></div>
+    <script>
+      (() => {
+        function ensureSplashAugmentation() {
+          const app = document.querySelector('#app');
+          if (!app) return;
+
+          const section = app.querySelector('section');
+          if (!section || section.querySelector('[data-cookiejar-note]')) return;
+
+          const note = document.createElement('p');
+          note.textContent = 'The Cookie Jar is a CYBER-PHYSICAL puzzle box. You need the physical box in front of you to complete this puzzle';
+          note.setAttribute('data-cookiejar-note', 'true');
+          note.style.textAlign = 'center';
+          note.style.margin = '0.75rem 0';
+
+          const firstParagraph = section.querySelector('p');
+          if (firstParagraph) {
+            section.insertBefore(note, firstParagraph);
+          } else {
+            section.appendChild(note);
+          }
+        }
+
+        const observer = new MutationObserver(() => ensureSplashAugmentation());
+        observer.observe(document.body, { childList: true, subtree: true });
+        ensureSplashAugmentation();
+      })();
+    </script>
+  </body>
 </html>
