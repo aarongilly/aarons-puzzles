@@ -1,0 +1,28 @@
+{
+  "release": "alpha",
+  "basePath": "/MedKit/",
+  "files": {
+    "index.html": "e1fc208dde94dcf45bce6395fe4e04117165f0bff8852a0facc4d29832ff3b82",
+    "styles.css": "20d67c51fdca04854344242e0a319399471ac050f44d0c81998b64d0783dd7ca",
+    "app.js": "4952defdfa4137f2f00d882484477d502f0ca5356584579ad540b18b1acf74b9",
+    "platformer.js": "0dde306bda4fd0795efd0bda7eebda467b79fabfe285c78d7b478148614bdbb1",
+    "home.js": "6980482d2cbaeb802cf3fdadf2e738cb5f8a794b614974fa68f896ef992fc442",
+    "audio.js": "ab071c5abccbb42a0bd263a3c63d23e55978a9b4ecb17154d1cb6787389f52bc",
+    "box-prototype-host.js": "15251b314f43b3ebd167cc88659d4d92f9d140f0ad4a67f3f3fc45c306eef70c",
+    "LICENSE": "d6b36dc4fd42b26d0c89550471dfc47f2f051d00234fe3bb6fabe54c16db6090",
+    "prototypes/box-3d/index.html": "9aab2cd6865883ec6b44836e69d454a6b5c3b66f5a813fd046dd378a007920bf",
+    "prototypes/box-3d/bootstrap.js": "903fa15f28a8c63e382fd4277ebaea2d50b500a77f144dd65425bd164fe3f458",
+    "prototypes/box-3d/prototype.js": "fba09201de25c377c391991d71592bffb5f8649fd2e5421d11d79890b019a533",
+    "prototypes/box-3d/state.mjs": "05a41e4b7fc20e3707f02a5d1ca40f97f2734823d79ea3869a07b49de69c6b92",
+    "prototypes/box-3d/vendor/three.module.js": "104f56145899722094556490d787aae0617cc2fc3382f31df02d724ea1aee341",
+    "prototypes/box-3d/vendor/three.core.js": "613e370f76638fdef83926642bf256dc9615684922de1ce1f63a8583e5d78578",
+    "prototypes/box-3d/vendor/OrbitControls.js": "e7fca2fe9e7670a828af9b28084669a5909445b7f36f1f26cee9bf8f2961c32c",
+    "prototypes/box-3d/vendor/LICENSE": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+    "assets/h-entry.png": "31f6e3ad3d74e5e0618a021c5473a91d05bf0cc180b922c709970bf480179303",
+    "assets/h-kitchen.png": "5a2ff749bb7d721d4b10ed8ee4f0ec2b2cf54e152053c0f1ac48b49078ac4239",
+    "assets/h-stairs.png": "5aad63cb529cbeca248fccc066ac58a42c40e577712a06221de49dfb2011d50a",
+    "assets/logo.svg": "cb476ee69bd03b887ed14afeffd73a558366c524df216bd91afdc9896c63d46c",
+    "assets/my-sprite.png": "b02a925a25a5e25c4a985bf831a7b07e82c4d755e12de1cb6db0b6163d8ff32e",
+    "assets/ow.m4a": "81867a813e363e409d7668bb471362c69105119d83a817770f321cd4edb98525"
+  }
+}
