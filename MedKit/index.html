@@ -7,10 +7,14 @@
     <title>Med Kit | Aaron's Puzzles</title>
     <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
+    <script defer src="platformer-shapes.js"></script>
     <script defer src="platformer.js"></script>
     <script defer src="home.js"></script>
+    <script defer src="detail.js"></script>
     <script defer src="audio.js"></script>
-    <script defer src="box-prototype-host.js"></script>
+    <script defer src="gamepad.js"></script>
+    <script defer src="high-scores.js"></script>
+    <script defer src="box-host.js"></script>
     <script defer src="app.js"></script>
   </head>
   <body>
@@ -25,59 +29,61 @@
         </div>
         <div id="game-header" hidden>
           <span id="game-timer" role="timer" aria-label="Elapsed time">00:00:00</span>
-          <h1 id="game-directive">Go Home →</h1>
+          <h1 id="game-directive">Run Home →</h1>
         </div>
       </header>
 
       <section id="splash" aria-label="Welcome to Med Kit">
         <div class="play-area splash-play-area">
           <div class="splash-play-content">
-            <div id="intro-video" class="intro-video">
-              <div class="video-placeholder">
-                <p class="video-title">Med Kit</p>
-                <p>Introductory video coming soon.</p>
+            <div class="splash-top">
+              <div id="intro-video" class="intro-video">
+                <div class="video-placeholder">
+                  <p class="video-title">Med Kit</p>
+                  <p>Introductory video coming soon.</p>
+                </div>
               </div>
+              <aside class="high-scores" aria-labelledby="splash-scores-title">
+                <h2 id="splash-scores-title">High scores</h2>
+                <p id="splash-scores-status" role="status">Loading…</p>
+                <table><thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col">Time</th></tr></thead><tbody id="splash-scores-rows"></tbody></table>
+                <button id="splash-scores-refresh" type="button">Refresh</button>
+              </aside>
             </div>
-            <p>Watch the video above before playing.<br>
+            <p class="splash-instructions">Watch the video above before playing.<br>
               This puzzle needs a computer or tablet, not a phone.<br>
               The game will take place within the <span style="color: red;">red box</span>. Resize your browser window so the entire box fits on your screen.</p>
             <div class="start-options">
-              <button id="start-game" type="button" disabled>Start Game</button>
-              <label class="alpha-access" for="alpha-code">Alpha code
-                <input id="alpha-code" type="text" placeholder="Enter code" autocomplete="off" autocapitalize="characters" spellcheck="false">
+              <label><input id="kid-mode" type="checkbox"> Kids mode</label>
+              <label class="player-name" for="player-name">Name
+                <input id="player-name" type="text" placeholder="Player" maxlength="40" autocomplete="nickname">
               </label>
+              <button id="start-game" type="button" disabled>Start Game</button>
             </div>
+            <p id="controller-check"><span id="controller-status">Controllers are supported - none detected</span><output id="controller-input" hidden></output></p>
             <noscript><p>Enable JavaScript to start Med Kit.</p></noscript>
           </div>
         </div>
       </section>
 
       <section id="game" aria-label="Med Kit game" hidden>
-        <canvas id="game-canvas" class="play-area game-surface" width="900" height="600" tabindex="0" aria-label="Go Home platformer. Move with A/D or Left/Right, hold W or Up to jump higher, and act with Space. Touch controls are in the bottom strip: left/right on the left, jump/action on the right.">
-          Your browser needs to support HTML Canvas to display the Med Kit game interface. Move with A/D or Left/Right, hold W or Up to jump higher, and act with Space.
+        <div class="game-stage">
+        <canvas id="game-canvas" class="play-area game-surface" width="900" height="600" tabindex="0" aria-label="Run Home platformer. Move with A/D or Left/Right, hold Left Shift to run, hold W or Up to jump higher, and act with Space. Touch controls are in the bottom strip: left/right on the left, jump/action on the right.">
+          Your browser needs to support HTML Canvas to display the Med Kit game interface. Move with A/D or Left/Right, hold Left Shift to run, hold W or Up to jump higher, and act with Space.
         </canvas>
-        <canvas id="box-canvas" class="play-area game-surface" width="900" height="600" tabindex="-1" aria-label="Virtual puzzle box. Box interactions are not implemented yet." hidden>
-          Your browser needs to support HTML Canvas to display the virtual puzzle box.
-        </canvas>
-        <iframe id="box-prototype" class="play-area game-surface" title="Experimental 3D puzzle box" hidden></iframe>
-        <div id="box-controls" hidden>
-          <button id="toggle-box" type="button" aria-controls="game-canvas box-canvas">View Puzzle Box</button>
+        <iframe id="box-view" class="play-area game-surface" title="3D puzzle box" hidden></iframe>
+        <div id="completion-video" hidden></div>
         </div>
+        <div id="box-controls" hidden>
+          <button id="toggle-box" type="button" aria-controls="game-canvas box-view">View Puzzle Box</button>
+        </div>
+        <aside id="completion-high-scores" class="high-scores" aria-labelledby="completion-scores-title" hidden>
+          <h2 id="completion-scores-title">High scores</h2>
+          <p id="completion-scores-status" role="status">Loading…</p>
+          <table><thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col">Time</th></tr></thead><tbody id="completion-scores-rows"></tbody></table>
+          <button id="completion-scores-refresh" type="button">Refresh</button>
+        </aside>
       </section>
-
-        <!-- DEVELOPMENT ONLY: Comment out this entire section before shipping. -->
-        <section id="development-tools" aria-label="Development tools" hidden>
-          <p>Mode: <output id="development-mode">Not started</output></p>
-          <p><label for="development-screen">Screen:</label> <select id="development-screen"></select></p>
-          <p><label><input id="development-med-kit" type="checkbox"> Med kit in inventory</label></p>
-          <div class="development-actions">
-            <button id="back-to-splash" type="button">Back to Splash Screen</button>
-            <button id="toggle-mode" type="button">Switch Mode</button>
-            <button id="reset-save" type="button">Reset Saved Game</button>
-          </div>
-          <p id="development-status" role="status"></p>
-        </section>
-        <!-- END DEVELOPMENT ONLY -->
     </main>
     <footer><a href="https://aaronspuzzles.com/">Aaron's Puzzles</a> &middot; 2026</footer>
   </body>

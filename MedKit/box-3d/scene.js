@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "./vendor/OrbitControls.js";
 import { BOX_DIMENSIONS, createBoxState, applyBoxAction, getHudButtons } from "./state.mjs";
 
-export function createBoxPrototype(canvas, hud, status) {
+export function createBoxView(canvas, hud, status) {
   const state = createBoxState();
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -11,8 +11,8 @@ export function createBoxPrototype(canvas, hud, status) {
   scene.background = new THREE.Color("#e7e9ed");
   const camera = new THREE.PerspectiveCamera(40, 900 / 480, 1, 2000);
   const controls = new OrbitControls(camera, canvas);
-  controls.enablePan = false;
-  controls.minDistance = 140;
+  controls.enablePan = true;
+  controls.minDistance = 45;
   controls.maxDistance = 750;
   controls.target.set(0, 17, 0);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x7c8394, 2.6));
@@ -25,6 +25,10 @@ export function createBoxPrototype(canvas, hud, status) {
 
   const root = new THREE.Group();
   scene.add(root);
+  // Each independently movable CAD assembly can replace the meshes in its group.
+  const enclosure = new THREE.Group();
+  enclosure.name = "enclosure";
+  root.add(enclosure);
   const red = new THREE.MeshStandardMaterial({ color: "#be2540", roughness: 0.75 });
   const dark = new THREE.MeshStandardMaterial({ color: "#333e48", roughness: 0.8 });
   const cream = new THREE.MeshStandardMaterial({ color: "#f1eee5", roughness: 0.8 });
@@ -34,8 +38,9 @@ export function createBoxPrototype(canvas, hud, status) {
   let frameId = null;
   let lastTime;
   let pointerStart;
+  let focusedPart = null;
   const scenePointers = new Set();
-  let message = "100 × 100 × 33 mm · Demo code: 000 · Drag to inspect; scroll/pinch to zoom.";
+  let message = "100 × 100 × 33 mm · Placeholder lock code: 000 · Select a part below to focus.";
   const context = hud.getContext("2d");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -68,14 +73,15 @@ export function createBoxPrototype(canvas, hud, status) {
 
   // Millimeters are world units. Floor + four walls leave a real, visible cavity.
   const { width, depth, height } = BOX_DIMENSIONS;
-  box(root, width, 3, depth, 0, 1.5, 0, red);
-  box(root, 3, height - 6, depth, -48.5, 16.5, 0, red);
-  box(root, 3, height - 6, depth, 48.5, 16.5, 0, red);
-  box(root, 94, height - 6, 3, 0, 16.5, -48.5, red);
-  box(root, 94, height - 6, 3, 0, 16.5, 48.5, red);
-  box(root, 94, 0.5, 94, 0, 3.3, 0, cream);
+  box(enclosure, width, 3, depth, 0, 1.5, 0, red);
+  box(enclosure, 3, height - 6, depth, -48.5, 16.5, 0, red);
+  box(enclosure, 3, height - 6, depth, 48.5, 16.5, 0, red);
+  box(enclosure, 94, height - 6, 3, 0, 16.5, -48.5, red);
+  box(enclosure, 94, height - 6, 3, 0, 16.5, 48.5, red);
+  box(enclosure, 94, 0.5, 94, 0, 3.3, 0, cream);
 
   const lid = new THREE.Group();
+  lid.name = "lid";
   lid.position.set(0, 31.5, 0);
   root.add(lid);
   const lidMesh = box(lid, width, 3, depth, 0, 0, 0, red);
@@ -102,16 +108,17 @@ export function createBoxPrototype(canvas, hud, status) {
     ctx.fillText("Clue placeholder", 256, 215);
   }), Math.PI / 2);
 
-  const lock = box(root, 56, 19, 6, 0, 17, 53, dark);
+  const lock = box(enclosure, 56, 19, 6, 0, 17, 53, dark);
   lock.userData.action = "unlock";
   const digitTextures = state.digits.map((_, index) => {
     const map = texture(64, 96, () => {});
-    const dial = decal(root, 12, 15, -16 + index * 16, 17, 56.1, map);
+    const dial = decal(enclosure, 12, 15, -16 + index * 16, 17, 56.1, map);
     dial.userData = { action: "digit", index };
     return map;
   });
 
   const panel = new THREE.Group();
+  panel.name = "panel";
   panel.position.set(0, 14, 0);
   root.add(panel);
   const housing = box(panel, 74, 18, 70, 0, 0, 0, dark);
@@ -176,25 +183,58 @@ export function createBoxPrototype(canvas, hud, status) {
     context.textAlign = "left";
     context.fillStyle = "#b8c7d1";
     context.font = "12px Arial";
-    context.fillText("3D EXPERIMENT · U unlock · L lid · F flip · P panel · V view · R reset · No game progress is changed", 12, 105);
+    context.fillText("Drag: orbit · Right-drag / two fingers: pan · Scroll / pinch: zoom", 356, 103, 532);
     status.textContent = message;
   }
 
   function resetView() {
+    focusedPart = null;
     camera.position.set(...(state.lidOpen ? [220, 230, 360] : [145, 155, 195]));
     controls.target.set(0, 17, 0);
     controls.update();
     requestRender();
   }
 
+  const parts = { box: enclosure, lid, panel };
+  const bounds = new THREE.Box3();
+  const center = new THREE.Vector3();
+
+  function focusPart(name) {
+    const part = parts[name];
+    if (!visible || !part || (name === "panel" && !state.lidOpen)) return;
+    focusedPart = name;
+    bounds.setFromObject(part);
+    bounds.getCenter(center);
+    const radius = bounds.getSize(new THREE.Vector3()).length() / 2;
+    const distance = Math.max(controls.minDistance, radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.1);
+    camera.position.set(145, 155, 195).normalize().multiplyScalar(distance).add(center);
+    controls.target.copy(center);
+    controls.update();
+    requestRender();
+  }
+
+  function trackFocusedPart() {
+    if (!focusedPart) return;
+    bounds.setFromObject(parts[focusedPart]).getCenter(center);
+    // Move the camera with the animated assembly, preserving viewing distance.
+    camera.position.add(center.clone().sub(controls.target));
+    controls.target.copy(center);
+    controls.update();
+  }
+
   function performAction(action, index = 0) {
     if (!visible) return;
     if (action === "view") resetView();
+    else if (action === "focus") focusPart(["box", "lid", "panel"][index]);
     else {
-      const wasOpen = state.lidOpen;
       const result = applyBoxAction(state, action, index);
       message = result.message;
-      if (action === "reset" || wasOpen !== state.lidOpen) resetView();
+      if (result.changed) {
+        if (action === "reset") resetView();
+        else if (action === "lid") { if (state.lidOpen) focusPart("lid"); else resetView(); }
+        else if (action === "flip") focusPart("lid");
+        else if (action === "panel") focusPart(state.panelRemoved ? "panel" : "box");
+      }
       updateTextures();
     }
     drawHud();
@@ -203,7 +243,7 @@ export function createBoxPrototype(canvas, hud, status) {
 
   const raycaster = new THREE.Raycaster();
   canvas.addEventListener("pointerdown", event => {
-    if (!visible || event.button !== 0) return;
+    if (!visible || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
     scenePointers.add(event.pointerId);
     if (scenePointers.size === 1) pointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY, dragged: false };
     else if (pointerStart) pointerStart.dragged = true;
@@ -244,6 +284,8 @@ export function createBoxPrototype(canvas, hud, status) {
   }
   window.addEventListener("keydown", onKey);
   controls.addEventListener("change", requestRender);
+  // Manual navigation takes over from automatic tracking of a moving part.
+  controls.addEventListener("start", () => { focusedPart = null; });
 
   function requestRender() {
     if (visible && frameId === null) frameId = requestAnimationFrame(render);
@@ -263,6 +305,7 @@ export function createBoxPrototype(canvas, hud, status) {
     lid.rotation.x += (flipTarget - lid.rotation.x) * amount;
     const animating = lid.position.distanceTo(lidTarget) > 0.02 || panel.position.distanceTo(panelTarget) > 0.02 || Math.abs(lid.rotation.x - flipTarget) > 0.002;
     if (!animating) { lid.position.copy(lidTarget); panel.position.copy(panelTarget); lid.rotation.x = flipTarget; }
+    trackFocusedPart();
     renderer.render(scene, camera);
     if (animating) requestRender();
     else lastTime = undefined;
@@ -273,6 +316,7 @@ export function createBoxPrototype(canvas, hud, status) {
   resetView();
   return {
     getState: () => structuredClone(state),
+    getCameraState: () => ({ focus: focusedPart, position: camera.position.toArray(), target: controls.target.toArray() }),
     performAction,
     setVisible(nextVisible) {
       visible = nextVisible;

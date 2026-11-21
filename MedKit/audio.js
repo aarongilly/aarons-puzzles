@@ -1,5 +1,28 @@
 // Add future sound effects here. Music can be added separately when it is needed.
-const GAME_SOUNDS = { ow: "assets/ow.m4a" };
+const GAME_SOUNDS = { ow: "assets/ow.m4a", ya: "assets/ya.m4a", spring: "assets/spring.mp3" };
+// Register a new clip above, then change just its outcome mapping here.
+const ACTION_SOUNDS = { empty: "ya", gate: "ya", enemy: "ya", inspect: "ya", tree: "ya", pickup: "ya", cast: "ya" };
+// Register clips in GAME_SOUNDS, then assign their IDs here. Each object/effect
+// can have its own clip. Null keeps unarmed interactions and bounces silent.
+const OBJECT_SOUNDS = {
+  "05": { gate: null },
+  "33": { tree: null, pickup: null },
+  "75": { inspect: null },
+  "78": { gate: null },
+  "79": { gate: null, pickup: null },
+  "02": { drop: null, pickup: null },
+  "81": { inspect: null },
+  "71": { bounce: "spring" },
+  "07": { bounce: "spring" },
+  griffin: { inspect: null, "give-bandage": null },
+  "arena-boss": { enemy: null },
+  "boss-key": { pickup: null },
+};
+
+function getInteractionSound(result) {
+  return OBJECT_SOUNDS[result.targetId]?.[result.effect] ??
+    (result.armed ? ACTION_SOUNDS[result.effect] ?? ACTION_SOUNDS.empty : null);
+}
 
 function createGameAudio(sources = GAME_SOUNDS) {
   const clips = new Map(Object.entries(sources).map(([name, source]) => {

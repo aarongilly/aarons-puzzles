@@ -63,5 +63,9 @@ export function getHudButtons(state) {
     button("panel", 490, 150, state.panelRemoved ? "Return panel" : "Remove panel", !state.lidOpen),
     button("view", 652, 110, "Reset view"),
     button("reset", 774, 114, "Reset demo"),
+    ...["box", "lid", "panel"].map((part, index) => ({
+      action: "focus", index, x: 12 + index * 112, y: 90, width: 104, height: 26,
+      label: `Focus ${part}`, disabled: part === "panel" && !state.lidOpen,
+    })),
   ];
 }

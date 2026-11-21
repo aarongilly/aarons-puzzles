@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Med Kit — Box 3D Prototype</title>
+    <title>Med Kit — Puzzle Box</title>
     <style>
       * { box-sizing: border-box; }
       html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #e7e9ed; }
@@ -17,9 +17,9 @@
     <script type="module" src="bootstrap.js"></script>
   </head>
   <body>
-    <canvas id="scene" width="900" height="480" tabindex="0" aria-label="3D box prototype. Drag to inspect, scroll or pinch to zoom. Use U to unlock the demo code 000, L to slide the lid, F to flip the removed lid, P to remove or return the panel, V to reset the view, and R to reset the demo. Keys 1, 2, and 3 cycle the lock digits."></canvas>
-    <canvas id="hud" width="900" height="120" aria-label="Prototype controls. Click the drawn controls or use the scene's keyboard shortcuts."></canvas>
+    <canvas id="scene" width="900" height="480" tabindex="0" aria-label="3D puzzle box. Drag to orbit; right-drag or two-finger drag to pan; scroll or pinch to zoom. Canvas buttons focus the box, lid, or panel. Use U to unlock the placeholder code 000, L to slide the lid, F to flip the removed lid, P to remove or return the panel, V to reset the view, and R to reset the demo. Keys 1, 2, and 3 cycle the lock digits."></canvas>
+    <canvas id="hud" width="900" height="120" aria-label="Puzzle box controls. Click the drawn controls or use the scene's keyboard shortcuts."></canvas>
     <p id="status" class="sr-only" role="status"></p>
-    <p id="failure">Loading the 3D prototype… If this message remains, serve the project over HTTP instead of opening index.html directly.</p>
+    <p id="failure">Loading the puzzle box… If this message remains, serve the project over HTTP instead of opening index.html directly.</p>
   </body>
 </html>

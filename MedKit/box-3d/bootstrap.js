@@ -20,13 +20,13 @@ window.addEventListener("pagehide", event => {
 window.addEventListener("pageshow", updateVisibility);
 
 try {
-  const { createBoxPrototype } = await import("./prototype.js");
-  controller = createBoxPrototype(document.querySelector("#scene"), document.querySelector("#hud"), document.querySelector("#status"));
-  window.boxPrototype = controller;
+  const { createBoxView } = await import("./scene.js");
+  controller = createBoxView(document.querySelector("#scene"), document.querySelector("#hud"), document.querySelector("#status"));
+  window.boxView = controller;
   failure.hidden = true;
   updateVisibility();
 } catch (error) {
   failure.hidden = false;
-  failure.textContent = "The 3D prototype could not load. Serve the project over HTTP and use a browser with WebGL 2 enabled. The rest of Med Kit is unaffected.";
-  console.error("Box prototype failed:", error);
+  failure.textContent = "The puzzle box could not load. Serve the project over HTTP and use a browser with WebGL 2 enabled.";
+  console.error("Puzzle box failed:", error);
 }

@@ -2,25 +2,27 @@
 // These are deliberately visible placeholder targets. Move/resize them here.
 const HOME_PANORAMAS = {
   "h-entry": {
-    src: "assets/h-entry.png", label: "Entry", width: 2040, height: 650,
+    src: "assets/h-entry.webp", label: "Entry", width: 1632, height: 520,
     hotspots: [
-      { id: "entry-kitchen", label: "Kitchen", target: "h-kitchen", x: 915, y: 300, width: 80, height: 100 },
-      { id: "entry-outside", label: "Leave house", action: "leave-house", x: 280, y: 140, width: 150, height: 320 },
-      { id: "entry-stairs", label: "Stairs", target: "h-stairs", x: 1145, y: 320, width: 80, height: 60 }
+      { id: "entry-kitchen", label: "Kitchen", target: "h-kitchen", x: 735, y: 230, width: 60, height: 90 },
+      { id: "entry-outside", label: "Leave house", action: "leave-house", x: 210, y: 110, width: 120, height: 280 },
+      { id: "entry-stairs", label: "Stairs", target: "h-stairs", x: 915, y: 250, width: 60, height: 60 },
+      { id: "entry-puzzle", label: "Inspect puzzle", action: "detail", detail: "house-puzzle", x: 450, y: 180, width: 120, height: 100 },
     ],
   },
   "h-kitchen": {
-    src: "assets/h-kitchen.png", label: "Kitchen", width: 2780, height: 650,
+    src: "assets/h-kitchen.webp", label: "Kitchen", width: 2224, height: 520,
     hotspots: [
-      { id: "kitchen-stairs", label: "Stairs", target: "h-stairs", x: 1880, y: 350, width: 150, height: 100 },
-      { id: "kitchen-entry", label: "Entry", target: "h-entry", x: 2350, y: 300, width: 120, height: 100 },
+      { id: "kitchen-stairs", label: "Stairs", target: "h-stairs", x: 1500, y: 300, width: 120, height: 70 },
+      { id: "kitchen-entry", label: "Entry", target: "h-entry", x: 1860, y: 220, width: 100, height: 80 },
     ],
   },
   "h-stairs": {
-    src: "assets/h-stairs.png", label: "Stairs", width: 1764, height: 650,
+    src: "assets/h-stairs.webp", label: "Stairs", width: 1411, height: 520,
     hotspots: [
-      { id: "stairs-kitchen", label: "Kitchen", target: "h-kitchen", x: 1220, y: 320, width: 110, height: 80 },
-    ],
+      { id: "stairs-kitchen", label: "Kitchen", target: "h-kitchen", x: 970, y: 240, width: 100, height: 60 },
+      { id: "stairs-med-kit", label: "MedKit", action: "pickup", item: "medKit", x: 1200, y: 300, width: 100, height: 80 },
+    ]
   },
 };
 const HOME_HUD_HEIGHT = 80;
@@ -35,9 +37,10 @@ function restoreHomeState(saved) {
   return { pano, offset: Number.isFinite(saved?.offset) ? wrapHomeOffset(saved.offset, HOME_PANORAMAS[pano].width) : 0 };
 }
 
-function getHomeHotspotAt(pano, offset, x, y) {
+function getHomeHotspotAt(pano, offset, x, y, inventory = {}) {
   const imageX = wrapHomeOffset(offset + x, pano.width);
   return pano.hotspots.find(hotspot =>
+    (!hotspot.item || inventory[hotspot.item] !== true) &&
     wrapHomeOffset(imageX - hotspot.x, pano.width) < hotspot.width &&
     y >= hotspot.y && y < hotspot.y + hotspot.height);
 }
@@ -51,7 +54,10 @@ function getHomeCopies(x, width, offset, viewportWidth, itemWidth) {
   return positions;
 }
 
-function createHome(canvas, { state: savedState, onStateChange = () => {}, onLeaveHome = () => {} } = {}) {
+function createHome(canvas, {
+  state: savedState, inventory = {}, onPickup = () => {},
+  onStateChange = () => {}, onLeaveHome = () => {}, onOpenDetail = () => {},
+} = {}) {
   const context = canvas.getContext("2d");
   const state = restoreHomeState(savedState);
   const images = new Map();
@@ -61,15 +67,20 @@ function createHome(canvas, { state: savedState, onStateChange = () => {}, onLea
   function save() { onStateChange({ ...state }); }
   function scale() { return (canvas.height - HOME_HUD_HEIGHT) / HOME_PANORAMAS[state.pano].height; }
 
-  function loadImage() {
-    if (images.has(state.pano)) return images.get(state.pano);
-    const id = state.pano;
+  function loadImage(id = state.pano) {
+    if (images.has(id)) return images.get(id);
     const image = new Image();
+    image.decoding = "async";
     const record = { image, status: "loading" };
     images.set(id, record);
-    image.addEventListener("load", () => {
+    const ready = () => {
       record.status = "ready";
       if (active && state.pano === id) draw();
+    };
+    image.addEventListener("load", () => {
+      // Decode off the rendering path too, so the first room draw stays quick.
+      if (typeof image.decode === "function") image.decode().then(ready, ready);
+      else ready();
     });
     image.addEventListener("error", () => {
       record.status = "error";
@@ -105,7 +116,7 @@ function createHome(canvas, { state: savedState, onStateChange = () => {}, onLea
 
   function hotspotAt(position) {
     if (position.y < 0 || position.y >= canvas.height - HOME_HUD_HEIGHT || position.x < 0 || position.x >= canvas.width) return;
-    return getHomeHotspotAt(HOME_PANORAMAS[state.pano], state.offset, position.x / scale(), position.y / scale());
+    return getHomeHotspotAt(HOME_PANORAMAS[state.pano], state.offset, position.x / scale(), position.y / scale(), inventory);
   }
 
   function panButtonAt(position) {
@@ -164,6 +175,12 @@ function createHome(canvas, { state: savedState, onStateChange = () => {}, onLea
       if (ended.hotspot.action === "leave-house") {
         save();
         onLeaveHome();
+      } else if (ended.hotspot.action === "pickup") {
+        onPickup(ended.hotspot.item);
+        draw();
+      } else if (ended.hotspot.action === "detail") {
+        save();
+        onOpenDetail(ended.hotspot.detail);
       } else navigate(ended.hotspot.target);
     }
     else if (ended.dragged) save();
@@ -204,6 +221,7 @@ function createHome(canvas, { state: savedState, onStateChange = () => {}, onLea
       context.textAlign = "center";
       context.textBaseline = "middle";
       pano.hotspots.forEach(hotspot => {
+        if (hotspot.item && inventory[hotspot.item] === true) return;
         for (const x of getHomeCopies(hotspot.x, pano.width, state.offset, viewWidth, hotspot.width)) {
           const left = x * imageScale, top = hotspot.y * imageScale;
           const width = hotspot.width * imageScale, height = hotspot.height * imageScale;
@@ -239,11 +257,13 @@ function createHome(canvas, { state: savedState, onStateChange = () => {}, onLea
     context.textAlign = "right";
     context.font = "14px Arial, sans-serif";
     context.fillText("Drag or ← / → to look", canvas.width - 16, viewHeight + 26);
-    context.fillText("Click or tap a target", canvas.width - 16, viewHeight + 52);
+    context.fillText(inventory.medKit ? "MedKit in inventory" : "Click or tap a target", canvas.width - 16, viewHeight + 52);
     canvas.setAttribute("aria-label", `Home: ${pano.label}. Drag or use Left/Right to look. Click or tap hotspots to navigate.`);
   }
 
   return {
+    refresh: draw,
+    preload() { Object.keys(HOME_PANORAMAS).forEach(id => loadImage(id)); },
     start() { active = true; canvas.style.cursor = "grab"; draw(); },
     stop() { cancelGesture(); active = false; canvas.style.cursor = ""; },
   };
