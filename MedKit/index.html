@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="styles.css">
     <script defer src="platformer-shapes.js"></script>
     <script defer src="platformer.js"></script>
+    <script defer src="hotspots.js"></script>
     <script defer src="home.js"></script>
     <script defer src="detail.js"></script>
     <script defer src="audio.js"></script>
@@ -29,7 +30,7 @@
         </div>
         <div id="game-header" hidden>
           <span id="game-timer" role="timer" aria-label="Elapsed time">00:00:00</span>
-          <h1 id="game-directive">Run Home →</h1>
+          <h1 id="game-directive">Find Med Kit</h1>
         </div>
       </header>
 
@@ -50,17 +51,17 @@
                 <button id="splash-scores-refresh" type="button">Refresh</button>
               </aside>
             </div>
-            <p class="splash-instructions">Watch the video above before playing.<br>
-              This puzzle needs a computer or tablet, not a phone.<br>
-              The game will take place within the <span style="color: red;">red box</span>. Resize your browser window so the entire box fits on your screen.</p>
+            <p class="splash-instructions">The game will take place within the <span style="color: red;">red box</span>.</p>
             <div class="start-options">
-              <label><input id="kid-mode" type="checkbox"> Kids mode</label>
+              <label><input id="kid-mode" type="checkbox" aria-describedby="kid-mode-description"> Kids mode</label>
               <label class="player-name" for="player-name">Name
-                <input id="player-name" type="text" placeholder="Player" maxlength="40" autocomplete="nickname">
+                <input id="player-name" aria-describedby="player-name-status" type="text" placeholder="Player" maxlength="40" autocomplete="nickname">
               </label>
               <button id="start-game" type="button" disabled>Start Game</button>
             </div>
-            <p id="controller-check"><span id="controller-status">Controllers are supported - none detected</span><output id="controller-input" hidden></output></p>
+            <p id="kid-mode-description" class="splash-instructions" hidden>Kids mode removes the more difficult puzzle element of the game.</p>
+            <p id="player-name-status" role="status"></p>
+            <p id="controller-check"><span id="controller-status">Controllers are supported - none detected</span><output id="controller-input" hidden></output> <button id="controller-compatibility" type="button" hidden>Try standard controls</button></p>
             <noscript><p>Enable JavaScript to start Med Kit.</p></noscript>
           </div>
         </div>
@@ -68,14 +69,14 @@
 
       <section id="game" aria-label="Med Kit game" hidden>
         <div class="game-stage">
-        <canvas id="game-canvas" class="play-area game-surface" width="900" height="600" tabindex="0" aria-label="Run Home platformer. Move with A/D or Left/Right, hold Left Shift to run, hold W or Up to jump higher, and act with Space. Touch controls are in the bottom strip: left/right on the left, jump/action on the right.">
-          Your browser needs to support HTML Canvas to display the Med Kit game interface. Move with A/D or Left/Right, hold Left Shift to run, hold W or Up to jump higher, and act with Space.
+        <canvas id="game-canvas" class="play-area game-surface" width="900" height="600" tabindex="0" aria-label="Find Med Kit platformer. Move with A/D or Left/Right, hold W or Up to jump higher, and act with Space. Touch controls are in the bottom strip: left/right on the left, jump/action on the right.">
+          Your browser needs to support HTML Canvas to display the Med Kit game interface. Move with A/D or Left/Right, hold W or Up to jump higher, and act with Space.
         </canvas>
         <iframe id="box-view" class="play-area game-surface" title="3D puzzle box" hidden></iframe>
         <div id="completion-video" hidden></div>
         </div>
-        <div id="box-controls" hidden>
-          <button id="toggle-box" type="button" aria-controls="game-canvas box-view">View Puzzle Box</button>
+        <div id="completion-actions" hidden>
+          <button id="completion-reset-save" type="button">Reset Saved Game</button>
         </div>
         <aside id="completion-high-scores" class="high-scores" aria-labelledby="completion-scores-title" hidden>
           <h2 id="completion-scores-title">High scores</h2>
@@ -84,6 +85,15 @@
           <button id="completion-scores-refresh" type="button">Refresh</button>
         </aside>
       </section>
+
+      <dialog id="reset-confirmation" aria-labelledby="reset-confirmation-title">
+        <p id="reset-confirmation-title">reset game progress to play again?</p>
+        <div class="reset-confirmation-actions">
+          <button id="reset-cancel" type="button" autofocus>Cancel</button>
+          <button id="reset-confirm" type="button">Reset</button>
+        </div>
+        <p id="reset-status" role="status"></p>
+      </dialog>
     </main>
     <footer><a href="https://aaronspuzzles.com/">Aaron's Puzzles</a> &middot; 2026</footer>
   </body>

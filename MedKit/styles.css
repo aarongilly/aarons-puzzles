@@ -9,6 +9,10 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
+/* Keep normal scrolling, but avoid accidental pull-to-refresh where supported. */
+html { overscroll-behavior-y: contain; }
+button, a { touch-action: manipulation; }
+
 body { margin: 0; padding: 24px 20px; }
 main { max-width: 900px; margin: 0 auto; text-align: center; }
 
@@ -92,8 +96,19 @@ button:disabled { background: #a1a1aa; color: #27272a; cursor: not-allowed; }
 .game-stage { position: relative; }
 #completion-video { position: absolute; top: 20%; left: 4%; width: 92%; aspect-ratio: 16 / 9; }
 #completion-video iframe { display: block; width: 100%; height: 100%; border: 0; }
+#completion-actions { margin: 16px auto; }
+#reset-confirmation {
+  max-width: min(440px, calc(100vw - 32px));
+  border: 1px solid #71717a;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+#reset-confirmation::backdrop { background: rgba(0, 0, 0, 0.6); }
+.reset-confirmation-actions { display: flex; justify-content: center; gap: 12px; }
+#reset-cancel { background: #d4d4d8; color: #242424; }
+#reset-status:empty { display: none; }
 #box-view { height: auto; }
-#box-controls { margin-top: 12px; }
 #game-canvas { touch-action: none; user-select: none; -webkit-user-select: none; }
 .canvas-caption { color: #55555d; font-size: 14px; }
 #development-tools { margin-top: 24px; padding: 16px; border: 1px dashed #71717a; text-align: left; }

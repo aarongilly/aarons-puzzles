@@ -3,14 +3,15 @@
 const GAMEPAD_DEAD_ZONE = 0.25;
 const GAMEPAD_CONTROL_LABELS = {
   left: "Left", right: "Right", up: "Up (unused)", down: "Down (unused)",
-  action: "Action", jump: "Jump", sprint: "Sprint", start: "Start Game",
+  action: "Action", jump: "Jump", start: "Start Game",
 };
 
-function readGamepadControls(pad) {
+function readGamepadControls(pad, tryStandard = false) {
   const buttons = Array.from(pad.buttons ?? [], (button, index) =>
     button?.pressed || button?.value > 0.5 ? index : null).filter(index => index !== null);
   const controls = [];
-  if (pad.mapping === "standard") {
+  const mapped = pad.mapping === "standard" || (tryStandard && pad.mapping === "");
+  if (mapped) {
     const pressed = index => buttons.includes(index);
     const x = pad.axes?.[0] ?? 0, y = pad.axes?.[1] ?? 0;
     if (pressed(14) || x < -GAMEPAD_DEAD_ZONE) controls.push("left");
@@ -19,10 +20,10 @@ function readGamepadControls(pad) {
     if (pressed(13) || y > GAMEPAD_DEAD_ZONE) controls.push("down");
     if (pressed(0)) controls.push("action");
     if (pressed(1)) controls.push("jump");
-    if (pressed(4) || pressed(5)) controls.push("sprint");
     if (pressed(9)) controls.push("start");
   }
-  return { status: pad.mapping === "standard" ? "ready" : "unmapped",
+  return { status: mapped ? "ready" : "unmapped",
+    compatibility: mapped && pad.mapping !== "standard",
     id: pad.id, index: pad.index, controls, buttons };
 }
 
@@ -32,6 +33,7 @@ function createGamepadControls({ onInput = () => {} } = {}) {
   let selected = null;
   let blurred = false;
   let needsNeutral = false;
+  let compatibilityId = null;
 
   function release() {
     needsNeutral = true;
@@ -60,10 +62,10 @@ function createGamepadControls({ onInput = () => {} } = {}) {
         if (pad) {
           if (selected !== pad.index) needsNeutral = true;
           selected = pad.index;
-          state = readGamepadControls(pad);
+          state = readGamepadControls(pad, pad.id === compatibilityId);
           if (needsNeutral) {
             // A held button must not fire after reconnecting or returning to the tab.
-            if (!state.controls.length && !state.buttons.length) needsNeutral = false;
+            if (!state.controls.length) needsNeutral = false;
             state = { ...state, testControls: state.controls, controls: [], waitingForRelease: needsNeutral };
           }
         } else selected = null;
@@ -78,6 +80,16 @@ function createGamepadControls({ onInput = () => {} } = {}) {
   }
 
   return {
+    tryStandardMapping() {
+      // Only the currently selected controller opts into this trial layout.
+      try {
+        const pad = Array.from(navigator.getGamepads() ?? []).find(pad => pad?.connected && pad.index === selected);
+        if (!pad || pad.mapping !== "") return false;
+        compatibilityId = pad.id;
+        release();
+        return true;
+      } catch { return false; }
+    },
     start() { if (!running) { running = true; poll(); } },
     stop() { running = false; cancelAnimationFrame(frameId); release(); },
   };

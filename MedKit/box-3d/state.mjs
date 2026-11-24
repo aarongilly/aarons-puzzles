@@ -1,71 +1,61 @@
-// Demonstration values only. This is not the real puzzle combination or game state.
-export const DEMO_COMBINATION = "000";
+export const ADMIN_CODE = "725";
 export const BOX_DIMENSIONS = { width: 100, depth: 100, height: 33 };
-
-export function createBoxState() {
-  return { digits: [0, 0, 0], unlocked: false, lidOpen: false, lidFlipped: false, panelRemoved: false, buttonPresses: 0 };
+export const SITUATIONS = [
+  { label: "Decapitation", response: "Beyond this device's paygrade." },
+  { label: "Rampant Diarrhea", response: "Find a toilet. Drink water." },
+  { label: "Acute Homework Allergy", response: "Not a real condition." },
+  { label: "Door-related Head Injury", response: "Duck faster." },
+  { label: "Lethargy", response: "Plenty of water. Move your body more. Avoid alcohol." },
+  { label: "Minor Playground scrape", correct: true },
+  { label: "Possible Demon Possession", response: "5 Hail Marys and church on Sundays." },
+  { label: "Spooky Spider", response: "Kill it with fire." },
+];
+const digits = value => Array.isArray(value) && value.length === 3 && value.every(n => Number.isInteger(n) && n >= 0 && n <= 9) ? [...value] : [0, 0, 0];
+export function createBoxState(saved = {}) {
+  const stage = ["situations", "admin", "dispensed", "collected"].includes(saved?.stage) ? saved.stage : "situations";
+  return {
+    lidOpen: saved?.lidOpen === true,
+    situation: Number.isInteger(saved?.situation) && saved.situation >= 0 && saved.situation < SITUATIONS.length ? saved.situation : 0,
+    stage: saved?.lidOpen === true ? stage : "situations",
+    adminDigits: digits(saved?.adminDigits),
+    selectedDigit: Number.isInteger(saved?.selectedDigit) && saved.selectedDigit >= 0 && saved.selectedDigit < 3 ? saved.selectedDigit : 0,
+    feedback: "",
+  };
 }
 
-export function applyBoxAction(state, action, index = 0) {
+export function applyBoxAction(state, action) {
   const blocked = message => ({ changed: false, message });
-  let message;
-  switch (action) {
-    case "digit":
-      if (state.unlocked || !Number.isInteger(index) || index < 0 || index > 2) return blocked("Reset the demo to try the lock again.");
-      state.digits[index] = (state.digits[index] + 1) % 10;
-      message = "Demo combination: 000. Click a digit to change it.";
-      break;
-    case "unlock":
-      if (state.unlocked) return blocked("Already unlocked.");
-      if (state.digits.join("") !== DEMO_COMBINATION) return blocked("Locked. Use 000 for this demonstration.");
-      state.unlocked = true;
-      message = "Unlocked. Slide the lid off to inspect the cavity.";
-      break;
-    case "lid":
-      if (!state.unlocked) return blocked("Unlock the lid first. Demo combination: 000.");
-      if (state.panelRemoved) return blocked("Return the panel before closing the box.");
-      state.lidOpen = !state.lidOpen;
-      state.lidFlipped = false;
-      message = state.lidOpen ? "Lid removed. Flip it to inspect the underside, or lift out the panel." : "Lid closed.";
-      break;
-    case "flip":
-      if (!state.lidOpen) return blocked("Slide the lid off before flipping it.");
-      state.lidFlipped = !state.lidFlipped;
-      message = state.lidFlipped ? "Lid underside: a placeholder for future clues." : "Lid top facing up.";
-      break;
-    case "panel":
-      if (!state.lidOpen) return blocked("Slide the lid off before removing the panel.");
-      state.panelRemoved = !state.panelRemoved;
-      message = state.panelRemoved ? "Panel removed. Contact-switch power is ON. Try its two demo buttons." : "Panel returned. Contact-switch power is OFF.";
-      break;
-    case "panel-button":
-      if (!state.panelRemoved) return blocked("The panel powers on when removed from the box.");
-      state.buttonPresses++;
-      message = `Demo button ${index + 1} pressed. No puzzle behavior is assigned.`;
-      break;
-    case "reset":
-      Object.assign(state, createBoxState());
-      message = "Demo reset. Combination: 000. Drag the scene to inspect the box.";
-      break;
-    default:
-      return blocked("Unknown demonstration action.");
+  if (action === "open") {
+    if (state.lidOpen) return blocked("The box is already open.");
+    state.lidOpen = true;
+    return { changed: true, message: "Med kit opened. Tap the medical assistant to focus it." };
   }
-  return { changed: true, message };
+  if (!state.lidOpen) return blocked("Open the med kit first.");
+  if (action === "collect") {
+    if (state.stage !== "dispensed") return blocked("No bandage is ready to collect.");
+    state.stage = "collected";
+    return { changed: true, completed: true, message: "Bandage collected. Time to help Griffin!" };
+  }
+  if (!["left", "right", "up", "down", "enter"].includes(action)) return blocked("Unknown control.");
+  if (["dispensed", "collected"].includes(state.stage)) return blocked(state.stage === "dispensed" ? "Take the bandage from the dispenser." : "Bandage already collected.");
+  state.feedback = "";
+  if (state.stage === "situations") {
+    if (action === "enter") {
+      const situation = SITUATIONS[state.situation];
+      if (situation.correct) { state.stage = "admin"; state.feedback = "Bandage recommended. Admin code required."; }
+      else state.feedback = situation.response;
+    } else state.situation = (state.situation + (["up", "left"].includes(action) ? -1 : 1) + SITUATIONS.length) % SITUATIONS.length;
+  } else if (action === "left" || action === "right") {
+    state.selectedDigit = (state.selectedDigit + (action === "left" ? 2 : 1)) % 3;
+  } else if (action === "up" || action === "down") {
+    state.adminDigits[state.selectedDigit] = (state.adminDigits[state.selectedDigit] + (action === "up" ? 1 : 9)) % 10;
+  } else if (state.adminDigits.join("") === ADMIN_CODE) {
+    state.stage = "dispensed";
+    state.feedback = "Bandage dispensed. Take it from the slot.";
+  } else state.feedback = "Admin code not recognized. Try again.";
+  return { changed: true, message: state.feedback || (state.stage === "admin" ? "Left/right: select digit. Up/down: change it. Enter: dispense." : "Select the situation, then press Enter.") };
 }
 
-export function getHudButtons(state) {
-  const button = (action, x, width, label, disabled = false, index = 0) => ({ action, x, y: 46, width, height: 38, label, disabled, index });
-  return [
-    ...state.digits.map((digit, index) => button("digit", 12 + index * 40, 32, String(digit), state.unlocked, index)),
-    button("unlock", 136, 100, state.unlocked ? "Unlocked" : "Unlock", state.unlocked),
-    button("lid", 248, 118, state.lidOpen ? "Close lid" : "Slide lid", !state.unlocked || state.panelRemoved),
-    button("flip", 378, 100, "Flip lid", !state.lidOpen),
-    button("panel", 490, 150, state.panelRemoved ? "Return panel" : "Remove panel", !state.lidOpen),
-    button("view", 652, 110, "Reset view"),
-    button("reset", 774, 114, "Reset demo"),
-    ...["box", "lid", "panel"].map((part, index) => ({
-      action: "focus", index, x: 12 + index * 112, y: 90, width: 104, height: 26,
-      label: `Focus ${part}`, disabled: part === "panel" && !state.lidOpen,
-    })),
-  ];
+export function getHudButtons() {
+  return [{ action: "explore", x: 12, y: 12, width: 180, height: 56, label: "Explore house" }];
 }

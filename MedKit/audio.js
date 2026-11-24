@@ -1,5 +1,10 @@
 // Add future sound effects here. Music can be added separately when it is needed.
-const GAME_SOUNDS = { ow: "assets/ow.m4a", ya: "assets/ya.m4a", spring: "assets/spring.mp3" };
+const GAME_SOUNDS = {
+  ow: "assets/ow.m4a", ya: "assets/ya.m4a", spring: "assets/spring.mp3", spooky: "assets/spooky.m4a",
+  "bathroom-dad-once": "assets/bathroom_dad_once.m4a",
+  "bathroom-dad-thereafter": "assets/bathroom_dad_thereafter.m4a",
+  "wheres-dad": "assets/wheres_dad.m4a",
+};
 // Register a new clip above, then change just its outcome mapping here.
 const ACTION_SOUNDS = { empty: "ya", gate: "ya", enemy: "ya", inspect: "ya", tree: "ya", pickup: "ya", cast: "ya" };
 // Register clips in GAME_SOUNDS, then assign their IDs here. Each object/effect
@@ -13,6 +18,7 @@ const OBJECT_SOUNDS = {
   "02": { drop: null, pickup: null },
   "81": { inspect: null },
   "71": { bounce: "spring" },
+  "89": { bounce: "spring" },
   "07": { bounce: "spring" },
   griffin: { inspect: null, "give-bandage": null },
   "arena-boss": { enemy: null },

@@ -21,8 +21,19 @@ window.addEventListener("pageshow", updateVisibility);
 
 try {
   const { createBoxView } = await import("./scene.js");
-  controller = createBoxView(document.querySelector("#scene"), document.querySelector("#hud"), document.querySelector("#status"));
+  let savedState;
+  try { savedState = JSON.parse(window.localStorage.getItem("med-kit:box-state")); } catch { /* Start fresh if storage is unavailable. */ }
+  controller = createBoxView(document.querySelector("#scene"), document.querySelector("#hud"), document.querySelector("#status"), {
+    state: savedState,
+    onStateChange(state) {
+      try { window.localStorage.setItem("med-kit:box-state", JSON.stringify(state)); } catch { /* Keep playing in memory. */ }
+      window.parent.updateMedKitProgress?.(state);
+    },
+    onExploreHouse() { window.parent.exploreHouseFromBox?.(); },
+    onCollect() { window.parent.completeMedKitPuzzle?.(); },
+  });
   window.boxView = controller;
+  window.parent.updateMedKitProgress?.(controller.getState());
   failure.hidden = true;
   updateVisibility();
 } catch (error) {

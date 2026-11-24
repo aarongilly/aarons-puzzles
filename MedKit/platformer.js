@@ -1,6 +1,5 @@
 // Temporary block course for testing movement; this is not the final level layout.
 const PLATFORMER_RUN_SPEED = 280;
-const PLATFORMER_SPRINT_MULTIPLIER = 1.75;
 const PLATFORMER_RAMP_SECONDS = 0.15;
 const PLATFORMER_GRAVITY = 1500;
 const PLATFORMER_HELD_JUMP_HEIGHT = 3;
@@ -21,7 +20,12 @@ const PLATFORMER_BOSS_PHASES = [
   { speed: 1.15 * 1.25, fireSeconds: 2 },
 ];
 const PLATFORMER_BOSS_PROJECTILE_SPEED = 280;
+const PLATFORMER_GROUND_BOSS = {
+  walkSpeed: PLATFORMER_RUN_SPEED * 1.1, walkSeconds: 1.35,
+  jumpHeight: 192, maxLeapSpeed: 500, recoverySeconds: 0.5, hitCooldownSeconds: 1,
+};
 const PLATFORMER_WIZARD_PROJECTILE_SPEED = 420;
+const PLATFORMER_WIZARD_CAST_COOLDOWN = 1;
 const PLATFORMER_BOSS_PROJECTILE_SPRITE = {
   src: "assets/sprites-projectile.png", frameWidth: 32, frameHeight: 32,
   framesPerSecond: 10, animations: { idle: { row: 0, frames: 4 } },
@@ -32,6 +36,14 @@ const PLATFORMER_BOSS_SPRITE = {
   animations: {
     idle: { row: 0, frames: 3 }, fire: { row: 1, frames: 1, duration: 0.25 },
     death: { row: 2, frames: 1, loop: false },
+  },
+};
+const PLATFORMER_FIRST_BOSS_SPRITE = {
+  ...PLATFORMER_BOSS_SPRITE, src: "assets/sprites-boss-one.png",
+  animations: {
+    ...PLATFORMER_BOSS_SPRITE.animations,
+    leap: { row: 1, frames: 1 },
+    recover: { row: 1, startColumn: 1, frames: 1 },
   },
 };
 const PLATFORMER_JUMPER_SPRITE = {
@@ -127,7 +139,8 @@ function getPlatformerActionHitbox(player) {
 }
 
 function getPlatformerBlockOpacity(block) {
-  return block.stunTime > 0 && Math.floor(block.stunTime / 0.12) % 2 === 0 ? 0.35 : 1;
+  const flashingTime = Math.max(block.stunTime ?? 0, block.hitCooldown ?? 0);
+  return flashingTime > 0 && Math.floor(flashingTime / 0.12) % 2 === 0 ? 0.35 : 1;
 }
 
 function getPlatformerBlockState(block) {
@@ -218,6 +231,7 @@ function getPlatformerActionLabel(world) {
 
 function canPerformPlatformerAction(world) {
   return !world.imagination && !world.stickDropPause && !world.arenaEscape && !(world.player.hurtTime > 0 || world.player.knockbackTime > 0) &&
+    (getPlatformerActionLabel(world) !== "Cast" || world.elapsed + 1e-9 >= (world.castReadyAt ?? 0)) &&
     (world.inventory.stick === true || getPlatformerActionLabel(world) !== "Action");
 }
 
@@ -329,7 +343,7 @@ function createPlatformerBlockDefinitions() {
   // Coordinates and dimensions are in 32px units. Ground keeps its named ID.
   return [
     { id: "ground", description: "Ground", x: 0, y: 22, width: PLATFORMER_WORLD_WIDTH, height: 6 },
-    { id: "01", description: "Spring toy", x: 8, y: 20, width: 2, height: 2 },
+    { id: "01", description: "Spring toy", x: 10, y: 20, width: 2, height: 2 },
     { id: "02", description: "Remember Griffin", type: "griffin-barrier", hidden: true,
       x: 6, y: 0, width: 0.125, height: 28, horizontalOnly: true, state: "inactive",
       states: { inactive: { passable: true }, active: { passable: false }, dropped: { passable: true } } },
@@ -425,14 +439,14 @@ function createPlatformerBlockDefinitions() {
         dropped: { passable: true, tileSet: "tree" },
         taken: { passable: true, tileSet: "tree" },
       } },
-    { id: "34", description: "Tall wall", x: 248, y: 18, width: 6, height: 4 },
+    { id: "34", description: "Tall wall", x: 248, y: 13, width: 10, height: 7 },
     { id: "35", description: "Stick barrier", type: "stick-barrier", hidden: true,
-      x: 252, y: 0, width: 0.125, height: 28, passable: false, horizontalOnly: true },
+      x: 250, y: 0, width: 0.125, height: 28, passable: false, horizontalOnly: true },
     { id: "36", description: "Walking NPC", type: "hazard", passable: true,
-      color: "#f28c28", x: 256, y: 20, width: 2, height: 2,
+      color: "#f28c28", x: 250, y: 20, width: 2, height: 2,
       actionEffect: "stun", stunDuration: 3, stunTime: 0, insets: { contact: 0.15, target: 0.05 },
       sprite: PLATFORMER_BULLY_SPRITE,
-      motion: { type: "patrol", minOffsetX: -2, maxOffsetX: 18, speed: 3.125, direction: 1 } },
+      motion: { type: "patrol", minOffsetX: 0, maxOffsetX: 6, speed: 3.125, direction: 1 } },
     { id: "37", description: "Jumping NPC", type: "hazard", passable: true,
       color: "#f28c28", x: 262, y: 20, width: 2, height: 2,
       actionEffect: "stun", stunDuration: 3, stunTime: 0, insets: { contact: 0.15, target: 0.05 },
@@ -465,7 +479,7 @@ function createPlatformerBlockDefinitions() {
     { id: "46", description: "Low WALL", x: 332, y: 20, width: 4, height: 2 },
     { id: "47", description: "Hazard", type: "hazard", passable: true,
       sprite: PLATFORMER_HAZARD_SPRITE,
-      color: "#8b4513", x: 340, y: 14, width: 1, height: 2 },
+      color: "#8b4513", x: 340, y: 14, width: 2, height: 2 },
     { id: "48", description: "Hazard", type: "hazard", passable: true,
       sprite: PLATFORMER_HAZARD_SPRITE,
       color: "#8b4513", x: 340, y: 21, width: 1, height: 1 },
@@ -539,6 +553,34 @@ function createPlatformerBlockDefinitions() {
       sprite: PLATFORMER_JUMPER_SPRITE,
       motion: { type: "hop", groundY: 20, jumpHeight: 4, restSeconds: 0.5, elapsed: 0 } },
     { id: "74", description: "Low platform", x: 534, y: 20, width: 4, height: 2 },
+    { id: "82", description: "Low platform", x: 544, y: 17, width: 2, height: 1 },
+    { id: "83", description: "Low platform", x: 554, y: 19, width: 1, height: 1 },
+    
+    { id: "89", color: "green", description: "SPRING", type: "spring", springHeight: 9,
+      x: 554, y: 18, width: 1, height: 1, sprite: PLATFORMER_SPRING_SPRITE },
+    
+    { id: "84", description: "Low platform", x: 563, y: 17, width: 2, height: 1 },
+    { id: "85", description: "Low platform", x: 567, y: 20, width: 2, height: 2 },
+
+    { id: "86", description: "Walking NPC", type: "hazard", passable: true,
+      color: "#f28c28", x: 554, y: 20, width: 2, height: 2,
+      actionEffect: "stun", stunDuration: 3, stunTime: 0,
+      insets: { contact: 0.15, target: 0.05 },
+      sprite: PLATFORMER_BULLY_SPRITE,
+      motion: { type: "patrol", minOffsetX: -6, maxOffsetX: 10, speed: 3.125, direction: 1 } },
+      { id: "87", description: "Walking NPC", type: "hazard", passable: true,
+      color: "#f28c28", x: 544, y: 20, width: 2, height: 2,
+      actionEffect: "stun", stunDuration: 3, stunTime: 0,
+      insets: { contact: 0.15, target: 0.05 },
+      sprite: PLATFORMER_BULLY_SPRITE,
+      motion: { type: "patrol", minOffsetX: -6, maxOffsetX: 10, speed: 3.125, direction: 1 } },
+      { id: "88", description: "Walking NPC", type: "hazard", passable: true,
+      color: "#f28c28", x: 564, y: 20, width: 2, height: 2,
+      actionEffect: "stun", stunDuration: 3, stunTime: 0,
+      insets: { contact: 0.15, target: 0.05 },
+      sprite: PLATFORMER_BULLY_SPRITE,
+      motion: { type: "patrol", minOffsetX: -16, maxOffsetX: 1, speed: 3.125, direction: 1 } },
+
     { id: "75", description: "Boss placeholder", type: "boss", passable: true,
       color: "#b44770", x: 574, y: 18, width: 4, height: 4, detail: "boss-arena", state: "alive",
       states: Object.fromEntries(PLATFORMER_BOSS_STATES.map(state => [state, { passable: true, tileSet: "boss", color: "#b44770" }])) },
@@ -650,11 +692,19 @@ function createBossArenaWorld(hits = 0, inventory = {}, bossKeyItem = "bossKey")
     { id: "arena-ceiling-left", description: "Arena ceiling", x: 0, y: groundY - 520, width: 418, height: 32 },
     { id: "arena-ceiling-right", description: "Arena ceiling", x: 482, y: groundY - 520, width: 418, height: 32 },
   ];
-  if (bossKeyItem === "bossKey") world.blocks.push(platformerBlockToPixels({
-    id: "arena-spring", description: "Arena spring", type: "spring", color: "green",
-    x: 18, y: PLATFORMER_GROUND_Y - 1, width: 2, height: 1, springHeight: 8,
-    sprite: PLATFORMER_SPRING_SPRITE,
-  }));
+  if (bossKeyItem === "bossKey") {
+    const boss = world.blocks[1];
+    boss.sprite = PLATFORMER_FIRST_BOSS_SPRITE;
+    boss.x = 650; boss.y = groundY - boss.height;
+    boss.motion = { type: "ground-boss", phase: "walk", remaining: randomGroundBossWalkSeconds(phase.speed),
+      minX: 32, maxX: world.width - 32 - boss.width, groundY: boss.y,
+      vx: PLATFORMER_GROUND_BOSS.walkSpeed * phase.speed, vy: 0 };
+    world.blocks.push(platformerBlockToPixels({
+      id: "arena-spring", description: "Arena spring", type: "spring", color: "green",
+      x: 18, y: PLATFORMER_GROUND_Y - 1, width: 2, height: 1, springHeight: 8,
+      sprite: PLATFORMER_SPRING_SPRITE,
+    }));
+  }
   if (bossKeyItem === "returnBossKey") world.blocks.push(
     { id: "arena-platform-left", description: "Arena platform", bossBounce: true,
       x: world.width * 0.25 - 32, y: groundY - 128, width: 64, height: 32 },
@@ -790,7 +840,7 @@ function reportPlatformerAction(world, effect, targetId = null) {
 }
 
 function hitPlatformerEnemy(world, block) {
-  if (block.stunTime > 0) return;
+  if (block.stunTime > 0 || block.hitCooldown > 0) return;
   if (block.actionEffect === "stun") {
     block.stunTime = block.stunDuration;
     block.stunFallSpeed = 0;
@@ -798,19 +848,72 @@ function hitPlatformerEnemy(world, block) {
     world.bossHits = Math.min(3, world.bossHits + 1);
     world.bossHitsChanged = true;
     block.stunTime = 0.35;
+    if (block.motion.type === "ground-boss") block.hitCooldown = PLATFORMER_GROUND_BOSS.hitCooldownSeconds;
     if (world.bossHits === 3) {
       world.bossDefeated = true;
       dropPlatformerBossKey(world, block);
       world.blocks = world.blocks.filter(item => item.motion?.type !== "projectile");
       block.type = "defeated"; block.actionEffect = null;
-      block.stunTime = 0; block.deathTime = 0; block.motion.vy = 0;
+      block.stunTime = 0; block.hitCooldown = 0; block.deathTime = 0; block.motion.vy = 0;
     } else {
       const phase = PLATFORMER_BOSS_PHASES[world.bossHits];
       const previous = PLATFORMER_BOSS_PHASES[world.bossHits - 1];
-      block.motion.vx *= phase.speed / previous.speed;
-      block.motion.vy *= phase.speed / previous.speed;
+      if (block.motion.type === "ground-boss") {
+        // Increase pacing difficulty without changing an airborne jump's trajectory.
+        if (block.motion.phase === "walk") block.motion.vx *= phase.speed / previous.speed;
+      } else {
+        block.motion.vx *= phase.speed / previous.speed;
+        block.motion.vy *= phase.speed / previous.speed;
+      }
       world.bossFireTime = Math.min(world.bossFireTime, phase.fireSeconds);
     }
+  }
+}
+
+function randomGroundBossWalkSeconds(speed) {
+  return PLATFORMER_GROUND_BOSS.walkSeconds * (1 + Math.random()) / speed;
+}
+
+function updatePlatformerGroundBoss(world, boss, dt) {
+  const motion = boss.motion, config = PLATFORMER_GROUND_BOSS;
+  const speed = PLATFORMER_BOSS_PHASES[Math.min(world.bossHits, 2)].speed;
+  if (motion.phase === "leap") {
+    if (motion.vx) boss.facing = Math.sign(motion.vx);
+    boss.x = Math.max(motion.minX, Math.min(motion.maxX, boss.x + motion.vx * dt));
+    boss.y += motion.vy * dt + PLATFORMER_GRAVITY * dt * dt / 2;
+    motion.vy += PLATFORMER_GRAVITY * dt;
+    if (motion.vy > 0 && boss.y >= motion.groundY) {
+      boss.y = motion.groundY;
+      motion.vx = motion.vy = 0;
+      motion.phase = "recover";
+      motion.remaining = config.recoverySeconds;
+    }
+    return;
+  }
+  motion.remaining -= dt;
+  if (motion.phase === "walk") {
+    if (motion.vx) boss.facing = Math.sign(motion.vx);
+    boss.x += motion.vx * dt;
+    if (boss.x < motion.minX || boss.x > motion.maxX) {
+      boss.x = Math.max(motion.minX, Math.min(motion.maxX, boss.x));
+      motion.vx *= -1;
+    }
+    if (motion.remaining <= 0) {
+      boss.facing = Math.sign(world.player.x + world.player.width / 2 - boss.x - boss.width / 2) || boss.facing || 1;
+      const launchSpeed = Math.sqrt(2 * PLATFORMER_GRAVITY * config.jumpHeight);
+      const flightSeconds = 2 * launchSpeed / PLATFORMER_GRAVITY;
+      // Aim once at takeoff; moving afterward lets the player dodge the landing.
+      const targetX = Math.max(motion.minX, Math.min(motion.maxX, world.player.x + world.player.width / 2 - boss.width / 2));
+      motion.vx = Math.max(-config.maxLeapSpeed, Math.min(config.maxLeapSpeed, (targetX - boss.x) / flightSeconds));
+      motion.vy = -launchSpeed;
+      motion.phase = "leap";
+      if (motion.vx) boss.facing = Math.sign(motion.vx);
+    }
+  } else if (motion.phase === "recover" && motion.remaining <= 0) {
+    motion.phase = "walk";
+    motion.remaining = randomGroundBossWalkSeconds(speed);
+    const away = boss.x + boss.width / 2 < world.player.x + world.player.width / 2 ? -1 : 1;
+    motion.vx = away * config.walkSpeed * speed;
   }
 }
 
@@ -937,6 +1040,7 @@ function stepPlatformerWorld(world, input, dt) {
       continue;
     }
     const contactPaused = block.contactPauseTime > 0;
+    if (block.hitCooldown > 0) block.hitCooldown = Math.max(0, block.hitCooldown - dt);
     if (contactPaused) block.contactPauseTime = Math.max(0, block.contactPauseTime - dt);
     if (block.stunTime > 0) {
       block.stunTime = Math.max(0, block.stunTime - dt);
@@ -949,6 +1053,10 @@ function stepPlatformerWorld(world, input, dt) {
       continue;
     }
     if (contactPaused) continue;
+    if (motion.type === "ground-boss") {
+      updatePlatformerGroundBoss(world, block, dt);
+      continue;
+    }
     if (motion.type === "bounce") {
       for (const [axis, velocity, min, max] of [["x", "vx", "minX", "maxX"], ["y", "vy", "minY", "maxY"]]) {
         const previous = block[axis];
@@ -996,8 +1104,8 @@ function stepPlatformerWorld(world, input, dt) {
     const groundY = PLATFORMER_GROUND_Y * PLATFORMER_BLOCK_SIZE;
     world.blocks = world.blocks.filter(block => block.motion?.type !== "projectile" ||
       (block.x + block.width >= 0 && block.x <= world.width && block.y + block.height >= groundY - 520 && block.y <= groundY));
-    if (!world.bossDefeated) world.bossFireTime -= dt;
-    if (!world.bossDefeated && world.bossFireTime <= 0) {
+    if (!world.bossDefeated && world.bossKeyItem === "returnBossKey") world.bossFireTime -= dt;
+    if (!world.bossDefeated && world.bossKeyItem === "returnBossKey" && world.bossFireTime <= 0) {
       world.bossFireTime += PLATFORMER_BOSS_PHASES[Math.min(world.bossHits, 2)].fireSeconds;
       const boss = world.blocks.find(block => block.id === "arena-boss");
       boss.firedAt = world.elapsed;
@@ -1027,7 +1135,7 @@ function stepPlatformerWorld(world, input, dt) {
   // Stop immediately on release; each new direction ramps from rest.
   if (!controlsLocked && (!direction || Math.sign(player.vx) !== direction)) player.vx = 0;
   if (!controlsLocked && direction) {
-    const speed = PLATFORMER_RUN_SPEED * (input.sprint ? PLATFORMER_SPRINT_MULTIPLIER : 1);
+    const speed = PLATFORMER_RUN_SPEED;
     const acceleration = speed / PLATFORMER_RAMP_SECONDS;
     player.vx = direction * Math.min(speed, Math.abs(player.vx) + acceleration * dt);
   }
@@ -1054,6 +1162,7 @@ function stepPlatformerWorld(world, input, dt) {
     world.pendingAction = { reported: false, armed: world.inventory.stick === true,
       cast: world.inventory.stick && world.inventory.medKit && getPlatformerActionLabel(world) === "Cast" };
     if (world.pendingAction.cast) {
+      world.castReadyAt = world.elapsed + PLATFORMER_WIZARD_CAST_COOLDOWN;
       world.blocks.push({ id: `wizard-projectile-${++world.playerProjectileId}`, description: "Magic projectile",
         type: "spell", owner: "player", passable: true,
         x: player.facing > 0 ? player.x + player.width : player.x - 32,
@@ -1138,7 +1247,7 @@ function stepPlatformerWorld(world, input, dt) {
     if (!platformerOverlap(player, bounds)) continue;
     if (player.vx > 0) player.x = bounds.x - player.width;
     if (player.vx < 0) player.x = bounds.x + bounds.width;
-    if (block.type === "stick-barrier") setPlatformerMessage(world, "I should get a sword for these bad guys!");
+    if (block.type === "stick-barrier") setPlatformerMessage(world, "How do I get past these bad guys!?");
     if (block.type === "griffin-barrier") setPlatformerMessage(world, "Oh yeah, I'm helping Griffin");
     if (block.type === "boss-barrier") setPlatformerMessage(world, "I need the boss key for this gate.");
     if (block.returnBarrierHeight && player.vx < 0 && !controlsLocked) {
@@ -1196,17 +1305,18 @@ function stepPlatformerWorld(world, input, dt) {
     const hitbox = getPlatformerActionHitbox(player);
     for (const block of world.blocks) {
       if (!["stun", "boss-hit"].includes(block.actionEffect) || !platformerOverlap(hitbox, getPlatformerBounds(block, "target"))) continue;
-      reportPlatformerAction(world, "enemy", block.id);
       if (block.actionEffect === "boss-hit") {
-        if (block.stunTime > 0 || world.pendingAction.bossHit) continue;
+        if (block.stunTime > 0 || block.hitCooldown > 0 || world.pendingAction.bossHit) continue;
         world.pendingAction.bossHit = true;
       }
+      reportPlatformerAction(world, "enemy", block.id);
       hitPlatformerEnemy(world, block);
     }
   }
   updatePlatformerSpells(world);
   if (player.hurtTime === 0) {
     const hazard = world.blocks.find(block => block.type === "hazard" && !(block.stunTime > 0) &&
+      !(block.motion?.type === "ground-boss" && block.motion.phase === "recover") &&
       !block.contactRecovery && platformerOverlap(getPlatformerPlayerContact(player), getPlatformerBounds(block, "contact")));
     if (hazard) {
       // Capture the player's side before knockback changes either facing or X.
@@ -1272,7 +1382,7 @@ function createPlatformer(canvas, {
   const cameraY = PLATFORMER_GROUND_Y * PLATFORMER_BLOCK_SIZE - canvas.height * PLATFORMER_CAMERA_FEET_RATIO;
   const held = new Map();
   const activePointers = new Set();
-  const keyControls = { ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right", ArrowUp: "jump", KeyW: "jump", Space: "action", ShiftLeft: "sprint" };
+  const keyControls = { ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right", ArrowUp: "jump", KeyW: "jump", Space: "action" };
   let jumpQueued = false;
   let actionQueued = false;
   let gamepadNeedsNeutral = true;
@@ -1287,6 +1397,24 @@ function createPlatformer(canvas, {
   let paletteStart = { ...palette };
   let paletteTarget = palette.id;
   let paletteElapsed = PLATFORMER_PALETTE_FADE_SECONDS;
+  // Decorative only: move at a fraction of the camera speed, independently of physics.
+  const backgrounds = world.isArena ? [] : [
+    { theme: "regular", src: "assets/background-normal.webp" },
+    { theme: "quest", src: "assets/background-knight.webp" },
+    { theme: "wizard", src: "assets/background-wizard.webp" },
+  ];
+  let backgroundCanvas;
+  for (const background of backgrounds) {
+    const image = new Image();
+    background.image = image;
+    background.ready = false;
+    background.opacity = palette.id === background.theme ? 1 : 0;
+    image.addEventListener("load", () => {
+      background.ready = image.naturalWidth > 0 && image.naturalHeight > 0;
+      if (running) draw();
+    });
+    image.src = background.src;
+  }
   const sprites = new Map();
   for (const sheet of [PLATFORMER_GRIFFIN_SPRITE, ...Object.values(PLATFORMER_THEMES).flatMap(theme => [theme.sprite, theme.stickSprite])]) {
     if (!sheet || sprites.has(sheet.src)) continue;
@@ -1321,7 +1449,7 @@ function createPlatformer(canvas, {
         const width = sheet.frameWidth ?? image.naturalWidth;
         const height = sheet.frameHeight ?? image.naturalHeight;
         // Trimmed atlas exports can omit transparent pixels at the right edge.
-        const requiredWidth = (sheet.sourceX ?? 0) + width * Math.max(...animations.map(item => item.frames)) -
+        const requiredWidth = (sheet.sourceX ?? 0) + width * Math.max(...animations.map(item => (item.startColumn ?? 0) + item.frames)) -
           (sheet.allowPartialFrames ? width - 1 : 0);
         return image.naturalWidth >= requiredWidth &&
           image.naturalHeight >= (sheet.sourceY ?? 0) + height * (Math.max(...animations.map(item => item.row)) + 1);
@@ -1402,7 +1530,7 @@ function createPlatformer(canvas, {
   }
 
   window.addEventListener("keydown", event => {
-    if (!running || event.ctrlKey || event.metaKey || event.altKey ||
+    if (!running || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey ||
         event.target.closest?.("input, textarea, select, [contenteditable]")) return;
     if (world.isArena && event.code === "Escape") { event.preventDefault(); return; }
     const control = keyControls[event.code];
@@ -1468,7 +1596,7 @@ function createPlatformer(canvas, {
       context.fillText(world.imagination.elapsed < 2 ? "This isn't a stick..." :
         world.imagination.wizard ? "it's a MAGIC WAND!" : "it's a SWORD!", canvas.width / 2, canvas.height - 40, 480);
     } else if (world.isArena) {
-      context.fillText(world.message || (world.bossDefeated ? "Boss defeated! Collect the key with Action." : inventory.stick ? `Boss: ${world.bossHits}/3 hits` : "A stick is needed to hit the boss."), canvas.width / 2, canvas.height - 58, 480);
+      context.fillText(world.message || "", canvas.width / 2, canvas.height - 58, 480);
     } else if (world.message) {
       if (world.messageSpeech) {
         context.fillStyle = "#ffffff";
@@ -1529,6 +1657,82 @@ function createPlatformer(canvas, {
     context.restore();
   }
 
+  function bossArtwork(record) {
+    const hits = Math.max(0, Math.min(3, world.bossHits));
+    if (!hits) return record.image;
+    record.shades ??= new Map();
+    if (!record.shades.has(hits)) {
+      // Tint the source sheet once per hit count, preserving its alpha and poses.
+      // Canvas compositing also works in browsers without canvas filter support.
+      const shade = document.createElement("canvas");
+      shade.width = record.image.naturalWidth;
+      shade.height = record.image.naturalHeight;
+      const tint = shade.getContext("2d");
+      tint.drawImage(record.image, 0, 0);
+      tint.globalCompositeOperation = "source-atop";
+      tint.fillStyle = `rgba(0, 0, 0, ${hits * 0.15})`;
+      tint.fillRect(0, 0, shade.width, shade.height);
+      record.shades.set(hits, shade);
+    }
+    return record.shades.get(hits);
+  }
+
+  function drawHouse(block) {
+    context.save();
+    context.globalAlpha = 1;
+    context.translate(block.x, block.y);
+    context.scale(block.width / 128, block.height / 128);
+    // A small clapboard house, drawn in the same stepped style as the gate/tree.
+    context.fillStyle = "#c9ac7a";
+    context.fillRect(8, 44, 112, 80);
+    context.fillStyle = "#ead5a8";
+    context.fillRect(8, 44, 106, 74);
+    context.fillStyle = "#d5bb8d";
+    for (let y = 54; y < 118; y += 12) context.fillRect(12, y, 102, 2);
+    // Brick chimney sits behind the overhanging, stepped roof.
+    context.fillStyle = "#925944";
+    context.fillRect(92, 8, 16, 32);
+    context.fillStyle = "#bd8060";
+    context.fillRect(90, 6, 20, 6);
+    context.fillStyle = "#593e39";
+    for (let row = 0; row < 8; row++) context.fillRect(56 - row * 8, 4 + row * 6, 16 + row * 16, 6);
+    context.fillStyle = "#a25f49";
+    for (let row = 0; row < 7; row++) context.fillRect(58 - row * 8, 6 + row * 6, 12 + row * 16, 4);
+    context.fillStyle = "#f7e6c2";
+    context.fillRect(8, 52, 4, 66);
+    context.fillRect(114, 52, 6, 66);
+    // Two bright windows with cream frames, crossbars, and projecting sills.
+    for (const x of [20, 84]) {
+      context.fillStyle = "#785e49";
+      context.fillRect(x - 2, 64, 28, 34);
+      context.fillStyle = "#f7e6c2";
+      context.fillRect(x, 64, 24, 30);
+      context.fillStyle = "#81b6c3";
+      context.fillRect(x + 3, 67, 18, 24);
+      context.fillStyle = "#bddbe0";
+      context.fillRect(x + 3, 67, 8, 10);
+      context.fillStyle = "#f7e6c2";
+      context.fillRect(x + 10, 67, 3, 24);
+      context.fillRect(x + 3, 77, 18, 3);
+      context.fillRect(x - 3, 94, 30, 4);
+    }
+    context.fillStyle = "#f7e6c2";
+    context.fillRect(49, 62, 30, 56);
+    context.fillStyle = "#537b72";
+    context.fillRect(53, 66, 22, 52);
+    context.fillStyle = "#3d625c";
+    context.fillRect(57, 72, 14, 18);
+    context.fillRect(57, 96, 14, 16);
+    context.fillStyle = "#e6bc52";
+    context.fillRect(69, 93, 3, 3);
+    context.fillStyle = "#85786b";
+    context.fillRect(8, 118, 112, 10);
+    context.fillStyle = "#b9ad98";
+    context.fillRect(45, 118, 38, 5);
+    context.fillRect(41, 123, 46, 5);
+    context.restore();
+  }
+
   function draw(dt = 0) {
     const player = world.player;
     onPlayerPosition({ x: player.x, y: player.y });
@@ -1562,10 +1766,75 @@ function createPlatformer(canvas, {
     context.beginPath();
     context.rect(0, 0, canvas.width, canvas.height - PLATFORMER_HUD_HEIGHT);
     context.clip();
+    const backgroundStep = dt / PLATFORMER_PALETTE_FADE_SECONDS;
+    for (const background of backgrounds) {
+      const backgroundTarget = theme.id === background.theme ? 1 : 0;
+      background.opacity += Math.max(-backgroundStep, Math.min(backgroundStep, backgroundTarget - background.opacity));
+      if (!background.ready || background.opacity <= 0) continue;
+      const image = background.image;
+      const height = canvas.height - PLATFORMER_HUD_HEIGHT;
+      const width = image.naturalWidth * height / image.naturalHeight;
+      const offset = cameraX * 0.15;
+      const first = Math.floor(offset / width);
+      if (!backgroundCanvas) {
+        backgroundCanvas = document.createElement("canvas");
+        backgroundCanvas.width = canvas.width;
+        backgroundCanvas.height = height;
+      }
+      const backdrop = backgroundCanvas.getContext("2d");
+      backdrop.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      backdrop.imageSmoothingEnabled = true;
+      // Assemble opaque tiles first; fading individual overlaps darkens their seams.
+      // Alternate mirrored tiles so both edges meet without a hard repeat seam.
+      for (let tile = first; tile * width - offset < canvas.width; tile++) {
+        const x = tile * width - offset;
+        backdrop.save();
+        backdrop.translate(x + (tile % 2 ? width : 0), 0);
+        backdrop.scale(tile % 2 ? -1 : 1, 1);
+        // Cover fractional-pixel edges so smoothing cannot expose a thin seam.
+        backdrop.drawImage(image, -1, 0, width + 2, height);
+        backdrop.restore();
+      }
+      context.save();
+      context.globalAlpha = background.opacity;
+      context.drawImage(backgroundCanvas, 0, 0);
+      context.restore();
+    }
     context.translate(-cameraX, -cameraY);
     context.strokeStyle = palette.grid;
+    if (!world.isArena && cameraX + canvas.width > world.width) {
+      // Continue the scenery past Home without expanding Ben's movement bounds.
+      const groundY = PLATFORMER_GROUND_Y * PLATFORMER_BLOCK_SIZE;
+      context.fillStyle = palette.terrain;
+      context.fillRect(world.width, groundY, cameraX + canvas.width - world.width, world.height - groundY);
+    }
+    if (!world.isArena && cameraX < 0) {
+      const unit = PLATFORMER_BLOCK_SIZE;
+      const left = Math.floor(cameraX / unit) * unit;
+      const groundY = PLATFORMER_GROUND_Y * unit;
+      // Decorative terrain continues beyond Ben's X=0 movement boundary.
+      context.fillStyle = palette.terrain;
+      context.fillRect(left, groundY, -left, world.height - groundY);
+      // Griffin is at X=-2: the five-unit slope ends immediately to his left.
+      // Farther left the hilltop stays level at Y=18.
+      context.fillStyle = "#54834d";
+      context.beginPath();
+      context.moveTo(Math.min(left, -7 * unit), 18 * unit);
+      context.lineTo(-7 * unit, 18 * unit);
+      context.lineTo(-2 * unit, groundY);
+      context.lineTo(Math.min(left, -7 * unit), groundY);
+      context.closePath();
+      context.fill();
+    }
     for (const block of getPlatformerSceneBlocks(world)) {
       if (block.hidden) continue;
+      if (block.type === "destination" && block.targetScreen === "home" && !block.sprite?.src) {
+        // Enlarge the artwork around its grounded front door, independently of entry geometry.
+        const house = { ...block, width: block.width * 3, height: block.height * 3,
+          x: block.x - block.width, y: block.y - block.height * 2 };
+        if (house.x + house.width >= cameraX && house.x <= cameraX + canvas.width) drawHouse(house);
+        continue;
+      }
       if (block.x + block.width < cameraX || block.x > cameraX + canvas.width) continue;
       if (block.id === "05" || block.id === "78") {
         const open = getPlatformerBlockState(block).passable;
@@ -1664,7 +1933,7 @@ function createPlatformer(canvas, {
         }
         context.translate(block.x + block.width / 2, block.y);
         if (frame.flip) context.scale(-1, 1);
-        context.drawImage(artwork.image, sourceX, sourceY, width, height,
+        context.drawImage(block.id === "arena-boss" ? bossArtwork(artwork) : artwork.image, sourceX, sourceY, width, height,
           -block.width / 2, 0, block.width, block.height);
         context.restore();
         continue;
@@ -1774,7 +2043,6 @@ function createPlatformer(canvas, {
     const wasPaused = Boolean(world.imagination || world.stickDropPause);
     const blockStateChanged = stepPlatformerWorld(world, {
       left: active.has("left"), right: active.has("right"),
-      sprint: active.has("sprint"),
       jump: jumpQueued, jumpHeld: active.has("jump"), action: actionQueued,
     }, dt);
     if (wasPaused !== Boolean(world.imagination || world.stickDropPause)) clearInput();
@@ -1828,7 +2096,7 @@ function createPlatformer(canvas, {
         previousGamepad = current;
         return;
       }
-      for (const control of ["left", "right", "sprint", "jump", "action"]) {
+      for (const control of ["left", "right", "jump", "action"]) {
         const source = `gamepad-${control}`;
         if (!current.has(control)) held.delete(source);
         else if (!["jump", "action"].includes(control) || !previousGamepad.has(control)) press(source, control);

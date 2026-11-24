@@ -11,10 +11,14 @@ const BLOCKS_STORAGE_KEY = `${STORAGE_PREFIX}blocks-v2`;
 const LEGACY_BLOCKS_STORAGE_KEY = `${STORAGE_PREFIX}blocks`;
 const GAME_SCREEN_STORAGE_KEY = `${STORAGE_PREFIX}game-screen`;
 const HOME_STORAGE_KEY = `${STORAGE_PREFIX}home`;
+const HOME_AUDIO_STORAGE_KEY = `${STORAGE_PREFIX}home-audio`;
 const INVENTORY_STORAGE_KEY = `${STORAGE_PREFIX}inventory`;
 const DETAIL_STORAGE_KEY = `${STORAGE_PREFIX}detail`;
+const DETAIL_PANS_STORAGE_KEY = `${STORAGE_PREFIX}detail-pans`;
 const COMPLETION_STORAGE_KEY = `${STORAGE_PREFIX}completion`;
 const POSITION_STORAGE_KEY = `${STORAGE_PREFIX}position`;
+const BOX_STATE_STORAGE_KEY = `${STORAGE_PREFIX}box-state`;
+const BOX_FOUND_STORAGE_KEY = `${STORAGE_PREFIX}box-found`;
 const PLAYER_NAME_STORAGE_KEY = `${STORAGE_PREFIX}player-name`;
 const GAMEPLAY_SCREENS = ["go-home", "home", "get-to-playground", "detail", "congratulations"];
 const gameAudio = createGameAudio();
@@ -32,19 +36,19 @@ const screenTransitions = {
   detail: { STEP_BACK: "home", BACK_TO_SPLASH: "splash", TOGGLE_BOX: "box" },
 };
 
-// Both modes use this same game state and canvas. Hardware integration comes later.
-// Presence of the query parameter selects physical mode, including a bare ?physical.
+// The game is digital-only; kids and regular play share this state and canvas.
 const gameState = {
-  mode: new URLSearchParams(window.location.search).has("physical") ? "physical" : "digital",
   kidMode: KID_MODE,
+  boxFound: false,
+  boxOpened: false,
   playerName: "Player",
   startedAt: null,
   completion: null,
   screen: "splash",
   gameScreen: "go-home",
   home: restoreHomeState(null),
-  inventory: { medKit: false, stick: false, bossKey: false, returnBossKey: false },
-  detail: restoreDetailState(null),
+  inventory: { medKit: false, bandage: false, stick: false, bossKey: false, returnBossKey: false },
+  detail: restoreDetailState(null, KID_MODE),
 };
 function normalizePlayerName(value) {
   return typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, 40) || "Player" : "Player";
@@ -53,21 +57,65 @@ try {
   gameState.playerName = normalizePlayerName(JSON.parse(window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY)));
 } catch { /* An optional name must not block gameplay. */ }
 try {
-  gameState.detail = restoreDetailState(JSON.parse(window.localStorage.getItem(DETAIL_STORAGE_KEY)));
+  gameState.detail = restoreDetailState(JSON.parse(window.localStorage.getItem(DETAIL_STORAGE_KEY)), KID_MODE);
 } catch {
   // Missing or invalid detail context uses the house placeholder.
 }
+let legacyInventorySave = true;
 const INVENTORY_CONTROLS = { medKit: "#development-med-kit", stick: "#development-stick", bossKey: "#development-boss-key", returnBossKey: "#development-return-boss-key" };
 try {
   const inventory = JSON.parse(window.localStorage.getItem(INVENTORY_STORAGE_KEY));
+  legacyInventorySave = !Object.hasOwn(inventory ?? {}, "bandage");
   for (const item of Object.keys(gameState.inventory)) gameState.inventory[item] = inventory?.[item] === true;
+  // Older saves awarded medKit only when the bandage had been collected.
+  if (legacyInventorySave) gameState.inventory.bandage = gameState.inventory.medKit;
 } catch {
   // Inventory starts empty if storage is unavailable or invalid.
+}
+
+try {
+  gameState.boxFound = !KID_MODE && (JSON.parse(window.localStorage.getItem(BOX_FOUND_STORAGE_KEY)) === true || gameState.inventory.medKit);
+} catch { gameState.boxFound = !KID_MODE && gameState.inventory.medKit; }
+// Migrate discoveries saved before the med kit itself became an inventory item.
+if (legacyInventorySave && gameState.boxFound) gameState.inventory.medKit = true;
+
+try {
+  gameState.boxOpened = !KID_MODE && JSON.parse(window.localStorage.getItem(BOX_STATE_STORAGE_KEY))?.lidOpen === true;
+} catch { /* An absent or malformed puzzle save starts closed. */ }
+
+function getGameDirective() {
+  if (gameState.gameScreen === "congratulations") return "You helped Griffin!";
+  if (gameState.gameScreen === "detail" && gameState.screen !== "box" && DETAIL_VIEWS[gameState.detail.id].kind === "arena") return "Defeat the Boss";
+  if (gameState.inventory.bandage) return "Get to the Playground";
+  if (gameState.inventory.medKit) return "Obtain Meds";
+  return "Find Med Kit";
+}
+
+// The embedded puzzle reports progress without restarting any active controller.
+function updateMedKitProgress(state) {
+  if (gameState.kidMode || gameState.screen !== "box" || typeof state?.lidOpen !== "boolean") return false;
+  gameState.boxOpened = state.lidOpen;
+  gameDirective.textContent = getGameDirective();
+  return true;
+}
+
+function viewMedKit() {
+  const fromDetail = gameState.screen === "detail" && DETAIL_VIEWS[gameState.detail.id].kind === "inspection";
+  if (gameState.kidMode || (gameState.screen !== "home" && !fromDetail) || !gameState.inventory.medKit) return false;
+  gameState.boxFound = true;
+  try { window.localStorage.setItem(BOX_FOUND_STORAGE_KEY, "true"); } catch { /* Keep discovery in memory. */ }
+  return transitionScreen("TOGGLE_BOX");
+}
+
+function exploreHouseFromBox() {
+  if (gameState.screen !== "box" || gameState.kidMode) return false;
+  return setScreen(gameState.gameScreen === "detail" ? "detail" : "home");
 }
 
 function setInventoryItem(item, owned) {
   if (!Object.hasOwn(gameState.inventory, item) || typeof owned !== "boolean") return false;
   gameState.inventory[item] = owned;
+  if (item === "medKit" && !owned) gameState.inventory.bandage = false;
   try {
     window.localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(gameState.inventory));
   } catch {
@@ -79,7 +127,9 @@ function setInventoryItem(item, owned) {
     if (checkbox) checkbox.checked = gameState.inventory[key];
   }
   home.refresh();
+  detailView.refresh?.();
   platformer.refreshInventory();
+  gameDirective.textContent = getGameDirective();
   return true;
 }
 const splash = document.querySelector("#splash");
@@ -90,11 +140,44 @@ try {
 } catch {
   // The initial entry panorama is used when no valid home view is saved.
 }
+let heardHomeSounds = new Set();
+try {
+  const saved = JSON.parse(window.localStorage.getItem(HOME_AUDIO_STORAGE_KEY));
+  if (Array.isArray(saved)) heardHomeSounds = new Set(saved.filter(name => typeof name === "string"));
+} catch { /* Missing or invalid dialogue progress starts unheard. */ }
+function playHomeSound(sound, firstSound) {
+  if (gameState.screen !== "home") return false;
+  if (firstSound && !heardHomeSounds.has(firstSound)) {
+    heardHomeSounds.add(firstSound);
+    try { window.localStorage.setItem(HOME_AUDIO_STORAGE_KEY, JSON.stringify([...heardHomeSounds])); }
+    catch { /* Keep first-use progress in memory when storage is unavailable. */ }
+    sound = firstSound;
+  }
+  return gameAudio.play(sound);
+}
 const home = createHome(gameCanvas, {
   state: gameState.home,
+  kidMode: KID_MODE,
   inventory: gameState.inventory,
-  onOpenDetail: openDetail,
-  onPickup(item) { setInventoryItem(item, true); },
+  canViewMedKit: () => gameState.inventory.medKit && !gameState.kidMode,
+  onViewMedKit: viewMedKit,
+  onSound: playHomeSound,
+  onOpenDetail(id) {
+    if (id === "house-puzzle" && !KID_MODE) { setInventoryItem("medKit", true); viewMedKit(); }
+    else openDetail(id);
+  },
+  onPickup(item) {
+    if (item === "medKit" && gameState.screen === "home" && !KID_MODE) {
+      setInventoryItem("medKit", true);
+      viewMedKit();
+      return;
+    }
+    setInventoryItem(item, true);
+    if (item === "medKit") {
+      setInventoryItem("bandage", true);
+      if (gameState.screen === "home") openDetail("kid-med-kit");
+    }
+  },
   onLeaveHome() {
     transitionScreen("LEAVE_HOUSE");
   },
@@ -153,7 +236,7 @@ const platformer = createPlatformer(gameCanvas, {
   onAction: playActionSound,
   onSpringBounce: playActionSound,
   onDestination(screen) {
-    if (screen === "congratulations" && gameState.inventory.medKit) transitionScreen("COMPLETE");
+    if (screen === "congratulations" && gameState.inventory.bandage) transitionScreen("COMPLETE");
     else if (screen === "home") transitionScreen("ENTER_HOME");
     else if (screen?.detail) openDetail(screen.detail);
   },
@@ -170,7 +253,20 @@ function playActionSound(result) {
   const sound = getInteractionSound(result);
   if (sound) gameAudio.play(sound);
 }
+let savedDetailPans = {};
+try { savedDetailPans = JSON.parse(window.localStorage.getItem(DETAIL_PANS_STORAGE_KEY)) ?? {}; }
+catch { /* Missing or invalid pan history starts with the default framing. */ }
 const detailView = createDetailView(gameCanvas, {
+  kidMode: KID_MODE,
+  panPositions: savedDetailPans,
+  onPanChange(positions) {
+    try { window.localStorage.setItem(DETAIL_PANS_STORAGE_KEY, JSON.stringify(positions)); }
+    catch { /* The controller retains framing in memory when storage is unavailable. */ }
+  },
+  canViewMedKit: () => gameState.inventory.medKit && !gameState.kidMode,
+  onViewMedKit: viewMedKit,
+  onOpenDetail: id => openDetail(id),
+  onSound: name => gameAudio.play(name),
   onPlayerPosition: updatePlayerCoordinates,
   inventory: gameState.inventory,
   getBossHits: id => platformer.getBossHits(id),
@@ -180,13 +276,21 @@ const detailView = createDetailView(gameCanvas, {
   onAction: playActionSound,
   onSpringBounce: playActionSound,
   onHazardHit() { gameAudio.play("ow"); },
-  onPickup(item) { setInventoryItem(item, true); },
+  onPickup(item) {
+    if (item !== "medKit") { setInventoryItem(item, true); return; }
+    if (gameState.screen !== "detail" || gameState.detail.returnScreen !== "home" ||
+        DETAIL_VIEWS[gameState.detail.id].pickupItem !== "medKit" || gameState.inventory.medKit) return;
+    setInventoryItem("medKit", true);
+    setScreen("home", false);
+    if (KID_MODE) {
+      setInventoryItem("bandage", true);
+      openDetail("kid-med-kit");
+    } else viewMedKit();
+  },
   onStepBack(exit) { transitionScreen("STEP_BACK", exit); },
 });
 const boxFrame = document.querySelector("#box-view");
 const boxView = createBoxHost(boxFrame);
-const boxControls = document.querySelector("#box-controls");
-const toggleBoxButton = document.querySelector("#toggle-box");
 const videoContainer = document.querySelector("#intro-video");
 const outroVideoContainer = document.querySelector("#completion-video");
 const startButton = document.querySelector("#start-game");
@@ -194,7 +298,10 @@ startButton.textContent = gameState.kidMode ? "Start Game · Kids" : "Start Game
 if (gameState.kidMode) startButton.setAttribute("data-kid-mode", "true");
 const kidModeCheckbox = document.querySelector("#kid-mode");
 if (kidModeCheckbox) kidModeCheckbox.checked = gameState.kidMode;
+const kidModeDescription = document.querySelector("#kid-mode-description");
+if (kidModeDescription) kidModeDescription.hidden = !gameState.kidMode;
 kidModeCheckbox?.addEventListener("change", () => {
+  if (kidModeDescription) kidModeDescription.hidden = !kidModeCheckbox.checked;
   if (kidModeCheckbox.checked === gameState.kidMode) return;
   const url = new URL(window.location.href);
   if (kidModeCheckbox.checked) url.searchParams.set("kid", "");
@@ -202,6 +309,8 @@ kidModeCheckbox?.addEventListener("change", () => {
   window.location.assign(url.href);
 });
 const playerNameInput = document.querySelector("#player-name");
+let highScores = [];
+let scoresReady = false;
 if (playerNameInput) playerNameInput.value = gameState.playerName === "Player" ? "" : gameState.playerName;
 function savePlayerName() {
   gameState.playerName = normalizePlayerName(playerNameInput?.value ?? gameState.playerName);
@@ -211,8 +320,14 @@ function savePlayerName() {
 }
 playerNameInput?.addEventListener("input", savePlayerName);
 function updateStartGate() {
-  // Temporary access check; later require only a trimmed name of at least 3 characters.
-  startButton.disabled = playerNameInput?.value.trim() !== "Fintel";
+  const raw = playerNameInput?.value.trim() ?? "";
+  const name = raw ? normalizePlayerName(raw) : "";
+  const longEnough = (name.match(/\p{L}/gu) ?? []).length >= 3;
+  const taken = highScores.slice(0, 5).some(score => normalizePlayerName(score.name).toLowerCase() === name.toLowerCase());
+  startButton.disabled = !longEnough || !scoresReady || taken;
+  const status = document.querySelector("#player-name-status");
+  if (status) status.textContent = !longEnough ? "" :
+    !scoresReady ? "Checking Fastest Five names…" : taken ? "That name is in the Fastest Five. Please choose another." : "";
 }
 updateStartGate();
 const splashHeader = document.querySelector("#splash-header");
@@ -221,12 +336,7 @@ const gameTimer = document.querySelector("#game-timer");
 const gameDirective = document.querySelector("#game-directive");
 let timerInterval;
 
-if (gameState.mode === "physical" || gameState.kidMode) {
-  boxFrame.remove();
-  boxControls.remove();
-} else {
-  toggleBoxButton.addEventListener("click", () => transitionScreen("TOGGLE_BOX"));
-}
+if (gameState.kidMode) boxFrame.remove();
 
 try {
   const savedStart = JSON.parse(window.localStorage.getItem(TIMER_STORAGE_KEY));
@@ -259,8 +369,8 @@ try {
 try {
   const savedScreen = JSON.parse(window.localStorage.getItem(SCREEN_STORAGE_KEY));
   if (typeof savedScreen === "string" && Object.hasOwn(screenTransitions, savedScreen)) {
-    // A saved virtual-box screen resumes the game when using the physical box.
-    gameState.screen = savedScreen === "box" && (gameState.mode === "physical" || gameState.kidMode) ? gameState.gameScreen : savedScreen;
+    // Kids resume gameplay rather than the adult puzzle box.
+    gameState.screen = savedScreen === "box" && gameState.kidMode ? gameState.gameScreen : savedScreen;
     if (GAMEPLAY_SCREENS.includes(gameState.screen)) gameState.gameScreen = gameState.screen;
   }
 } catch {
@@ -273,13 +383,28 @@ if (!gameState.completion) {
   if (gameState.screen === "congratulations") gameState.screen = "go-home";
 }
 
+// Called by the Three.js puzzle only after its actual completion rules are met.
+// Dispensing is not collection: only tapping the released bandage calls this hook.
+function completeMedKitPuzzle() {
+  const fromHome = gameState.gameScreen === "home" || (gameState.gameScreen === "detail" && gameState.detail.returnScreen === "home");
+  if (gameState.kidMode || gameState.screen !== "box" || !fromHome || !gameState.inventory.medKit || gameState.inventory.bandage) return false;
+  setInventoryItem("bandage", true);
+  return openDetail("kid-med-kit");
+}
+
 function openDetail(id) {
-  if (!Object.hasOwn(DETAIL_VIEWS, id) || !["home", "go-home", "get-to-playground"].includes(gameState.screen)) return false;
-  if (gameState.kidMode && DETAIL_VIEWS[id].kind === "puzzle") return false;
+  const nested = gameState.screen === "detail";
+  const boxSource = gameState.gameScreen === "detail" ? gameState.detail.returnScreen : gameState.gameScreen;
+  const source = nested ? gameState.detail.returnScreen : gameState.screen === "box" ? boxSource : gameState.screen;
+  if (!Object.hasOwn(DETAIL_VIEWS, id) || !["home", "go-home", "get-to-playground"].includes(source) ||
+      (gameState.screen === "box" && id !== "kid-med-kit")) return false;
+  if (nested && (DETAIL_VIEWS[gameState.detail.id].kind !== "inspection" || DETAIL_VIEWS[id].kind !== "inspection")) return false;
+  if (gameState.kidMode && (DETAIL_VIEWS[id].kind === "puzzle" || DETAIL_VIEWS[id].adultOnly)) return false;
   if (DETAIL_VIEWS[id].kind === "arena" && (gameState.screen === "home" || !gameState.inventory.stick || gameState.inventory[DETAIL_VIEWS[id].keyItem])) return false;
   gameState.detail = {
-    id, returnScreen: gameState.screen,
-    returnPoint: gameState.screen === "home" ? null : platformer.getReturnPoint(),
+    id, returnScreen: source,
+    returnPoint: nested ? gameState.detail.returnPoint : source === "home" ? null : platformer.getReturnPoint(),
+    ...(nested ? { returnDetails: [...(gameState.detail.returnDetails ?? []), gameState.detail.id].slice(-20) } : {}),
   };
   try {
     window.localStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify(gameState.detail));
@@ -291,31 +416,34 @@ function openDetail(id) {
 }
 
 function transitionScreen(event, exit) {
-  if (event === "START" && startButton.disabled) return false;
-  if (event === "START") savePlayerName();
-  if (event === "TOGGLE_BOX" && (gameState.mode !== "digital" || gameState.kidMode)) return false;
+  if (event === "START") {
+    updateStartGate();
+    if (startButton.disabled) return false;
+    savePlayerName();
+  }
+  if (event === "TOGGLE_BOX" && gameState.kidMode) return false;
   const transitions = screenTransitions[gameState.screen];
   if (!Object.hasOwn(transitions, event)) return false;
   let nextScreen = transitions[event];
-  if (event === "ENTER_HOME" && gameState.kidMode) {
-    if (gameState.inventory.medKit) {
-      platformer.setJourney("get-to-playground");
-      platformer.enterFromHome();
-      return setScreen("get-to-playground");
-    }
-    setInventoryItem("medKit", true);
-    return openDetail("kid-med-kit");
-  }
   if (event === "START" || (gameState.screen === "box" && event === "TOGGLE_BOX")) {
     nextScreen = gameState.gameScreen;
   } else if (event === "LEAVE_HOUSE") {
-    nextScreen = gameState.inventory.medKit ? "get-to-playground" : "go-home";
+    nextScreen = gameState.inventory.bandage ? "get-to-playground" : "go-home";
     platformer.setJourney(nextScreen);
     platformer.enterFromHome();
   } else if (event === "STEP_BACK") {
     const view = DETAIL_VIEWS[gameState.detail.id];
+    if (gameState.detail.returnDetails?.length) {
+      const returnDetails = [...gameState.detail.returnDetails];
+      gameState.detail = restoreDetailState({ ...gameState.detail, id: returnDetails.pop(), returnDetails }, KID_MODE);
+      try { window.localStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify(gameState.detail)); }
+      catch { /* Keep navigation available when storage is unavailable. */ }
+      return setScreen("detail");
+    }
     if (view.kind === "pickup") {
       setInventoryItem("medKit", true);
+      setInventoryItem("bandage", true);
+      if (gameState.detail.returnScreen === "home") return setScreen("home");
       platformer.setJourney("get-to-playground");
       platformer.enterFromHome();
       return setScreen("get-to-playground");
@@ -334,8 +462,7 @@ function transitionScreen(event, exit) {
 // Shared save/render path. The development selector can bypass progression events.
 function setScreen(nextScreen, moveFocus = true, submitScore = false) {
   if (!Object.hasOwn(screenTransitions, nextScreen) ||
-      (nextScreen === "box" && (gameState.mode !== "digital" || gameState.kidMode)) ||
-      (gameState.kidMode && nextScreen === "home")) return false;
+      (nextScreen === "box" && gameState.kidMode)) return false;
   const newCompletion = nextScreen === "congratulations" && !gameState.completion;
   if (newCompletion) {
     const now = Date.now();
@@ -374,25 +501,26 @@ function renderScreen(moveFocus = false) {
     platformer.setJourney(gameState.screen);
     platformer.start();
     // Warm the same cache used by the house without delaying character control.
-    if (!gameState.kidMode) home.preload();
+    home.preload();
   }
   else platformer.stop();
-  const directive = gameState.gameScreen === "detail" ? DETAIL_VIEWS[gameState.detail.id].title
-    : { home: "Find Med Kit", "go-home": "Run Home", "get-to-playground": "Get to Playground", congratulations: "You helped Griffin!" }[gameState.gameScreen];
+  const directive = getGameDirective();
   gameDirective.textContent = directive;
   gameCanvas.setAttribute("aria-label", gameState.gameScreen === "home"
     ? "Home panoramas. Drag to look around and click targets to move between rooms."
-    : `${directive} platformer. Move with A/D or Left/Right, hold Left Shift to run, hold W or Up to jump higher, and act with Space. Touch controls are in the bottom strip.`);
+    : `${directive} platformer. Move with A/D or Left/Right, hold W or Up to jump higher, and act with Space. Touch controls are in the bottom strip.`);
   if (gameState.screen === "home") home.start();
   if (gameState.screen === "detail") detailView.start(gameState.detail.id, getPlatformerTheme(gameState.detail.returnPoint?.x ?? 0, gameState.inventory));
   gameCanvas.hidden = isBox;
-  if (isBox && gameState.mode === "digital" && !gameState.kidMode) boxView.start();
+  if (isBox && !gameState.kidMode) boxView.start();
   else boxView.stop();
-  boxControls.hidden = isSplash || isComplete || gameState.mode !== "digital" || gameState.kidMode;
   const finalScores = document.querySelector("#completion-high-scores");
   if (finalScores) finalScores.hidden = !isComplete;
+  const completionActions = document.querySelector("#completion-actions");
+  if (completionActions) completionActions.hidden = !isComplete;
+  const resetConfirmation = document.querySelector("#reset-confirmation");
+  if (!isComplete && resetConfirmation?.open) resetConfirmation.close();
   updateOutroVideo(isComplete);
-  toggleBoxButton.textContent = isBox ? "Return to Game" : "View Puzzle Box";
 
   const developmentScreen = document.querySelector("#development-screen");
   if (developmentScreen) developmentScreen.value = gameState.screen;
@@ -468,11 +596,11 @@ async function submitHighScore() {
   if (gameState.screen === "congratulations") drawCongratulations();
 }
 
-let highScores = [];
 let scoresLoading = false;
 let scoresFailed = false;
 let scoreRefreshPending = false;
 function renderHighScores() {
+  updateStartGate();
   for (const prefix of ["splash", "completion"]) {
     const title = document.querySelector(`#${prefix}-scores-title`);
     if (title) title.textContent = `High scores · ${gameState.kidMode ? "Kids" : "Regular"}`;
@@ -501,6 +629,7 @@ async function loadHighScores(refreshAfterCurrent = false) {
   catch { scoresFailed = true; }
   finally {
     scoresLoading = false;
+    scoresReady = true;
     renderHighScores();
     if (scoreRefreshPending) { scoreRefreshPending = false; void loadHighScores(); }
   }
@@ -580,14 +709,17 @@ if (embedUrl) {
   console.warn("Set INTRO_VIDEO_URL to a valid YouTube video URL.");
 }
 
-const developmentMode = document.querySelector("#development-mode");
-if (developmentMode) developmentMode.textContent = `${gameState.mode}${gameState.kidMode ? " · kids" : ""}`;
 
 for (const [item, selector] of Object.entries(INVENTORY_CONTROLS)) {
   const checkbox = document.querySelector(selector);
   if (checkbox) {
     checkbox.checked = gameState.inventory[item];
-    checkbox.addEventListener("change", () => setInventoryItem(item, checkbox.checked));
+    checkbox.addEventListener("change", () => {
+      const owned = checkbox.checked;
+      // This diagnostic remains a shortcut to the completed pickup state.
+      if (item === "medKit") setInventoryItem("bandage", owned);
+      setInventoryItem(item, owned);
+    });
   }
 }
 
@@ -615,8 +747,7 @@ if (developmentScreenSelect) {
     const option = document.createElement("option");
     option.value = screen;
     option.textContent = screen;
-    option.disabled = (screen === "box" && (gameState.mode !== "digital" || gameState.kidMode)) ||
-      (screen === "home" && gameState.kidMode);
+    option.disabled = screen === "box" && gameState.kidMode;
     developmentScreenSelect.append(option);
   }
   developmentScreenSelect.addEventListener("change", () => {
@@ -636,21 +767,7 @@ document.querySelector("#back-to-splash")?.addEventListener("click", () => {
   transitionScreen("BACK_TO_SPLASH");
 });
 
-const toggleModeButton = document.querySelector("#toggle-mode");
-if (toggleModeButton) {
-  toggleModeButton.textContent = gameState.mode === "physical" ? "Switch to Digital Mode" : "Switch to Physical Mode";
-  toggleModeButton.addEventListener("click", () => {
-    const url = new URL(window.location.href);
-    if (gameState.mode === "physical") {
-      url.searchParams.delete("physical");
-    } else {
-      url.searchParams.set("physical", "");
-    }
-    window.location.assign(url.href);
-  });
-}
-
-document.querySelector("#reset-save")?.addEventListener("click", () => {
+function resetSavedGame() {
   try {
     const storage = window.localStorage;
     const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index));
@@ -658,10 +775,28 @@ document.querySelector("#reset-save")?.addEventListener("click", () => {
       if (key?.startsWith(STORAGE_PREFIX) && (gameState.kidMode || !key.startsWith("med-kit:kid:"))) storage.removeItem(key);
     }
     window.location.reload();
+    return true;
   } catch {
-    const status = document.querySelector("#development-status");
-    if (status) status.textContent = "Unable to reset saved data. Check that this browser allows local storage.";
+    for (const selector of ["#development-status", "#reset-status"]) {
+      const status = document.querySelector(selector);
+      if (status) status.textContent = "Unable to reset saved data. Check that this browser allows local storage.";
+    }
+    return false;
   }
+}
+document.querySelector("#reset-save")?.addEventListener("click", resetSavedGame);
+
+const resetConfirmation = document.querySelector("#reset-confirmation");
+document.querySelector("#completion-reset-save")?.addEventListener("click", () => {
+  if (gameState.screen !== "congratulations" || !resetConfirmation || resetConfirmation.open) return;
+  const status = document.querySelector("#reset-status");
+  if (status) status.textContent = "";
+  resetConfirmation.showModal();
+});
+document.querySelector("#reset-cancel")?.addEventListener("click", () => resetConfirmation?.close());
+document.querySelector("#reset-confirm")?.addEventListener("click", () => {
+  if (gameState.screen !== "congratulations" || !resetConfirmation?.open) return;
+  if (resetSavedGame()) resetConfirmation.close();
 });
 
 // Restore the saved screen on every load, including reloads triggered by edits.
@@ -678,15 +813,19 @@ const gamepadControls = createGamepadControls({
     const input = editing && gameState.screen !== "splash" ? { ...state, suspended: true } : state;
     platformer.setGamepadInput(input);
     detailView.setGamepadInput(input);
+    home.setGamepadInput(input);
     if (gameState.screen === "splash") {
       const status = document.querySelector("#controller-status");
       const detected = ["ready", "unmapped"].includes(state.status);
-      const message = detected ? "Controller detected! Input:" : "Controllers are supported - none detected";
+      const message = state.status === "unmapped" ? "Controller detected, but its controls aren't mapped. Input:" :
+        detected ? "Controller detected! Input:" : "Controllers are supported - none detected";
+      const compatibility = document.querySelector("#controller-compatibility");
+      if (compatibility) compatibility.hidden = state.status !== "unmapped";
       if (status && status.textContent !== message) status.textContent = message;
       const output = document.querySelector("#controller-input");
       if (output) {
         output.hidden = !detected;
-        const unused = (state.buttons ?? []).filter(index => state.status !== "ready" || ![0, 1, 4, 5, 9, 12, 13, 14, 15].includes(index));
+        const unused = (state.buttons ?? []).filter(index => state.status !== "ready" || ![0, 1, 9, 12, 13, 14, 15].includes(index));
         const labels = (state.testControls ?? [...controls]).map(control => GAMEPAD_CONTROL_LABELS[control]);
         if (unused.length) labels.push("Unassigned button");
         const text = labels.join(" · ") || "—";
@@ -695,6 +834,9 @@ const gamepadControls = createGamepadControls({
       if (startPressed) transitionScreen("START");
     }
   },
+});
+document.querySelector("#controller-compatibility")?.addEventListener("click", () => {
+  gamepadControls.tryStandardMapping();
 });
 gamepadControls.start();
 void loadHighScores();

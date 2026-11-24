@@ -57,7 +57,7 @@ function readPlatformerSpriteBounds(image, sprite) {
       .filter(([name]) => !sprite.boundsAnimations || sprite.boundsAnimations.includes(name)) : [];
     const frames = animations.length ? animations.flatMap(([, animation]) =>
       Array.from({ length: animation.frames }, (_, column) => ({
-        x: (sprite.sourceX ?? 0) + column * width, y: (sprite.sourceY ?? 0) + animation.row * height, width, height })))
+        x: (sprite.sourceX ?? 0) + ((animation.startColumn ?? 0) + column) * width, y: (sprite.sourceY ?? 0) + animation.row * height, width, height })))
       : [{ x: sprite.sourceX ?? 0, y: sprite.sourceY ?? 0, width, height }];
     const bounds = scanPlatformerAlpha(data, canvas.width, canvas.height, frames, sprite.alphaThreshold ?? 1);
     return bounds && { x: bounds.x / width, y: bounds.y / height, width: bounds.width / width, height: bounds.height / height };
@@ -79,6 +79,9 @@ function getPlatformerEntityFrame(block, time, sprite = block.sprite) {
       name = "bounce";
       time = elapsed;
     }
+  } else if (block.motion?.type === "ground-boss" && ["leap", "recover"].includes(block.motion.phase) && sprite.animations[block.motion.phase]) {
+    name = block.motion.phase;
+    time = 0;
   } else if (sprite.animations.fire && Number.isFinite(block.firedAt) &&
       time >= block.firedAt && time - block.firedAt < sprite.animations.fire.duration) {
     name = "fire";
@@ -97,6 +100,7 @@ function getPlatformerEntityFrame(block, time, sprite = block.sprite) {
   }
   const animation = sprite.animations[name] ?? sprite.animations.idle ?? Object.values(sprite.animations)[0];
   const frame = Math.floor(time * (sprite.framesPerSecond ?? 10));
-  return { row: animation.row, column: name === "death" || animation.loop === false ? Math.min(frame, animation.frames - 1) : frame % animation.frames,
+  const column = (animation.startColumn ?? 0) + (name === "death" || animation.loop === false ? Math.min(frame, animation.frames - 1) : frame % animation.frames);
+  return { row: animation.row, column,
     flip: name === "hit" ? block.hitFlip === true : (block.motion?.direction ?? block.facing ?? 1) < 0 };
 }
