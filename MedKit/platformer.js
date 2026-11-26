@@ -850,6 +850,7 @@ function hitPlatformerEnemy(world, block) {
     block.stunTime = 0.35;
     if (block.motion.type === "ground-boss") block.hitCooldown = PLATFORMER_GROUND_BOSS.hitCooldownSeconds;
     if (world.bossHits === 3) {
+      world.actionResults.push({ effect: "boss-defeated", targetId: block.id, armed: false });
       world.bossDefeated = true;
       dropPlatformerBossKey(world, block);
       world.blocks = world.blocks.filter(item => item.motion?.type !== "projectile");
@@ -907,11 +908,13 @@ function updatePlatformerGroundBoss(world, boss, dt) {
       motion.vx = Math.max(-config.maxLeapSpeed, Math.min(config.maxLeapSpeed, (targetX - boss.x) / flightSeconds));
       motion.vy = -launchSpeed;
       motion.phase = "leap";
+      world.actionResults.push({ effect: "boss-jump", targetId: boss.id, armed: false });
       if (motion.vx) boss.facing = Math.sign(motion.vx);
     }
   } else if (motion.phase === "recover" && motion.remaining <= 0) {
     motion.phase = "walk";
-    motion.remaining = randomGroundBossWalkSeconds(speed);
+    motion.remaining = randomGroundBossWalkSeconds(speed) * (motion.nextWalkMultiplier ?? 1);
+    motion.nextWalkMultiplier = 1;
     const away = boss.x + boss.width / 2 < world.player.x + world.player.width / 2 ? -1 : 1;
     motion.vx = away * config.walkSpeed * speed;
   }
@@ -971,7 +974,11 @@ function stepPlatformerWorld(world, input, dt) {
     return false;
   }
   if (world.imagination) {
+    const previousElapsed = world.imagination.elapsed;
     world.imagination.elapsed = Math.min(6, world.imagination.elapsed + dt);
+    if (previousElapsed < 2 && world.imagination.elapsed >= 2) {
+      world.actionResults.push({ effect: "equip-stick", targetId: world.imagination.sourceId, armed: false, wizard: world.imagination.wizard });
+    }
     if (world.imagination.elapsed >= 6) {
       world.imagination = null;
       world.player.imagining = false;
@@ -1106,6 +1113,7 @@ function stepPlatformerWorld(world, input, dt) {
       (block.x + block.width >= 0 && block.x <= world.width && block.y + block.height >= groundY - 520 && block.y <= groundY));
     if (!world.bossDefeated && world.bossKeyItem === "returnBossKey") world.bossFireTime -= dt;
     if (!world.bossDefeated && world.bossKeyItem === "returnBossKey" && world.bossFireTime <= 0) {
+      world.actionResults.push({ effect: "boss-fire", targetId: "arena-boss", armed: false });
       world.bossFireTime += PLATFORMER_BOSS_PHASES[Math.min(world.bossHits, 2)].fireSeconds;
       const boss = world.blocks.find(block => block.id === "arena-boss");
       boss.firedAt = world.elapsed;
@@ -1200,7 +1208,7 @@ function stepPlatformerWorld(world, input, dt) {
     if (!world.removedItem && !world.inventory.stick && getNearbyPlatformerStick(world)) {
       const sourceId = world.stickDrop.sourceId ?? tree?.id;
       reportPlatformerAction(world, "pickup", sourceId);
-      world.imagination = { elapsed: 0, wizard: world.inventory.medKit === true };
+      world.imagination = { elapsed: 0, wizard: world.inventory.medKit === true, sourceId };
       Object.assign(player, { imagining: true, vx: 0, vy: 0, actionTime: 0, landTime: 0, jumpHolding: false });
       world.pendingAction = null;
       world.message = "";
@@ -1334,6 +1342,13 @@ function stepPlatformerWorld(world, input, dt) {
       player.landTime = 0;
       player.knockbackTime = PLATFORMER_KNOCKBACK_SECONDS;
       player.hurtTime = PLATFORMER_HURT_SECONDS;
+      if (hazard.motion?.type === "ground-boss") {
+        // Give Ben a longer interval before the next leap after being hurt.
+        if (hazard.motion.phase === "walk") {
+          const speed = PLATFORMER_BOSS_PHASES[Math.min(world.bossHits, 2)].speed;
+          hazard.motion.remaining = 2 * randomGroundBossWalkSeconds(speed);
+        } else hazard.motion.nextWalkMultiplier = 2;
+      }
       if (hazard.motion?.type === "patrol") {
         hazard.contactPauseTime = PLATFORMER_HURT_SECONDS;
         hazard.contactRecovery = true;

@@ -323,11 +323,11 @@ function updateStartGate() {
   const raw = playerNameInput?.value.trim() ?? "";
   const name = raw ? normalizePlayerName(raw) : "";
   const longEnough = (name.match(/\p{L}/gu) ?? []).length >= 3;
-  const taken = highScores.slice(0, 5).some(score => normalizePlayerName(score.name).toLowerCase() === name.toLowerCase());
+  const taken = highScores.some(score => normalizePlayerName(score.name).toLowerCase() === name.toLowerCase());
   startButton.disabled = !longEnough || !scoresReady || taken;
   const status = document.querySelector("#player-name-status");
   if (status) status.textContent = !longEnough ? "" :
-    !scoresReady ? "Checking Fastest Five names…" : taken ? "That name is in the Fastest Five. Please choose another." : "";
+    !scoresReady ? "Checking high score names…" : taken ? "That name is already on the high score list. Please choose another." : "";
 }
 updateStartGate();
 const splashHeader = document.querySelector("#splash-header");

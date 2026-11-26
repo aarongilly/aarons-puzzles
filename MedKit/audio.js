@@ -4,6 +4,9 @@ const GAME_SOUNDS = {
   "bathroom-dad-once": "assets/bathroom_dad_once.m4a",
   "bathroom-dad-thereafter": "assets/bathroom_dad_thereafter.m4a",
   "wheres-dad": "assets/wheres_dad.m4a",
+  knight: "assets/knight.mp3", wizard: "assets/wizard.wav",
+  "boss-beat": "assets/boss-beat.mp3", fireball: "assets/fireball.wav",
+  "monkey-jump": "assets/monkey-jump.wav",
 };
 // Register a new clip above, then change just its outcome mapping here.
 const ACTION_SOUNDS = { empty: "ya", gate: "ya", enemy: "ya", inspect: "ya", tree: "ya", pickup: "ya", cast: "ya" };
@@ -21,11 +24,12 @@ const OBJECT_SOUNDS = {
   "89": { bounce: "spring" },
   "07": { bounce: "spring" },
   griffin: { inspect: null, "give-bandage": null },
-  "arena-boss": { enemy: null },
+  "arena-boss": { enemy: null, "boss-defeated": "boss-beat", "boss-fire": "fireball", "boss-jump": "monkey-jump" },
   "boss-key": { pickup: null },
 };
 
 function getInteractionSound(result) {
+  if (result.effect === "equip-stick") return result.wizard ? "wizard" : "knight";
   return OBJECT_SOUNDS[result.targetId]?.[result.effect] ??
     (result.armed ? ACTION_SOUNDS[result.effect] ?? ACTION_SOUNDS.empty : null);
 }
