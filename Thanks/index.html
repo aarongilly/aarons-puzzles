@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Thanksgiving Puzzle</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+        background: #f3eff5;
+        color: #281d2d;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+      }
+
+      main {
+        width: min(100%, 28rem);
+        padding: 2rem;
+        border-radius: 1rem;
+        background: #fff;
+        box-shadow: 0 0.5rem 2rem #281d2d1a;
+      }
+
+      h1 {
+        margin-top: 0;
+        text-align: center;
+      }
+
+      .answer {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.75rem;
+        margin-block: 1.25rem;
+      }
+
+      .and-connector {
+        margin: 0;
+        text-align: center;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      label {
+        grid-column: 1 / -1;
+        font-weight: 600;
+      }
+
+      input,
+      button {
+        min-height: 2.75rem;
+        border: 1px solid #9a8b9e;
+        border-radius: 0.4rem;
+        font: inherit;
+      }
+
+      input {
+        min-width: 0;
+        padding-inline: 0.75rem;
+      }
+
+      input.correct {
+        border-color: #198038;
+        background: #d7f5df;
+        color: #123d20;
+      }
+
+      input.incorrect {
+        border-color: #b42318;
+        background: #fde3e1;
+        color: #5b1611;
+      }
+
+      button {
+        padding-inline: 1rem;
+        border: 0;
+        background: #5e2670;
+        color: white;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #472054;
+      }
+
+      .feedback {
+        grid-column: 1 / -1;
+        min-height: 1.25rem;
+        margin: 0;
+      }
+
+      #revealed-message {
+        margin-top: 2rem;
+        padding: 1.25rem;
+        border-radius: 0.5rem;
+        background: #e8f7ec;
+        color: #123d20;
+      }
+
+      #revealed-message[hidden] {
+        display: none;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          background: #160d1e;
+          color: #f5edf7;
+        }
+
+        main {
+          background: #281d2d;
+        }
+
+        input {
+          background: #160d1e;
+          color: inherit;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Thanksgiving Puzzle</h1>
+
+      <form class="answer" data-answer="first">
+        <label for="first-number">Bigger number</label>
+        <input id="first-number" name="answer" type="number" step="1" required />
+        <button type="submit">Submit</button>
+        <p class="feedback" aria-live="polite"></p>
+      </form>
+
+      <p class="and-connector">AND</p>
+
+      <form class="answer" data-answer="second">
+        <label for="second-number">Smaller number</label>
+        <input id="second-number" name="answer" type="number" step="1" required />
+        <button type="submit">Submit</button>
+        <p class="feedback" aria-live="polite"></p>
+      </form>
+
+      <div id="revealed-message" hidden>
+        <p>2 on 7/14</p>
+        <p>1 on 7/25</p>
+      </div>
+    </main>
+
+    <script>
+      // Replace these example answers and the message above with your own.
+      const expectedAnswers = {
+        first: 2714,
+        second: 1725,
+      };
+      const correctAnswers = new Set();
+      const message = document.getElementById('revealed-message');
+
+      document.querySelectorAll('.answer').forEach((form) => {
+        const answerName = form.dataset.answer;
+        const input = form.elements.answer;
+        const feedback = form.querySelector('.feedback');
+
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const isCorrect = Number(input.value) === expectedAnswers[answerName];
+
+          input.classList.toggle('correct', isCorrect);
+          input.classList.toggle('incorrect', !isCorrect);
+          input.setAttribute('aria-invalid', String(!isCorrect));
+          feedback.textContent = isCorrect ? 'Correct!' : 'Try again.';
+
+          if (isCorrect) {
+            correctAnswers.add(answerName);
+          } else {
+            correctAnswers.delete(answerName);
+          }
+
+          message.hidden = correctAnswers.size !== 2;
+        });
+
+        input.addEventListener('input', () => {
+          input.classList.remove('correct', 'incorrect');
+          input.removeAttribute('aria-invalid');
+          feedback.textContent = '';
+          correctAnswers.delete(answerName);
+          message.hidden = true;
+        });
+      });
+    </script>
+  </body>
+</html>
